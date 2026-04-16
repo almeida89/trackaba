@@ -8,6 +8,7 @@ import PainelPrincipal from "@/paginas/PainelPrincipal";
 import ListaCriancas from "@/paginas/ListaCriancas";
 import PastaCrianca from "@/paginas/PastaCrianca";
 import PaginaModulo from "@/paginas/PaginaModulo";
+import PaginaAgenda from "@/paginas/PaginaAgenda";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
