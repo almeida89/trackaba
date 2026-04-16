@@ -8,6 +8,7 @@ import PainelPrincipal from "@/paginas/PainelPrincipal";
 import ListaCriancas from "@/paginas/ListaCriancas";
 import PastaCrianca from "@/paginas/PastaCrianca";
 import PaginaModulo from "@/paginas/PaginaModulo";
+import PaginaAgenda from "@/paginas/PaginaAgenda";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -27,7 +28,7 @@ const App = () => (
             <Route path="/sessoes" element={<PaginaModulo />} />
             <Route path="/programas" element={<PaginaModulo />} />
             <Route path="/avaliacoes" element={<PaginaModulo />} />
-            <Route path="/agenda" element={<PaginaModulo />} />
+            <Route path="/agenda" element={<PaginaAgenda />} />
             <Route path="/escola" element={<PaginaModulo />} />
             <Route path="/familia" element={<PaginaModulo />} />
             <Route path="/relatorios" element={<PaginaModulo />} />
