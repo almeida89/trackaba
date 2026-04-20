@@ -155,34 +155,6 @@ function ConteudoProgramas() {
   );
 }
 
-function ConteudoSessoes() {
-  const sessoesMock = [
-    { data: "15/04/2026", profissional: "Dra. Ana Souza", duracao: "50min", tipo: "ABA Individual", nota: "Boa evolução em PECS nível 3. Manteve atenção por 15 min." },
-    { data: "12/04/2026", profissional: "Dra. Ana Souza", duracao: "50min", tipo: "ABA Individual", nota: "Dificuldade em transição de atividades. Aplicado suporte visual." },
-    { data: "10/04/2026", profissional: "Dr. Carlos Lima", duracao: "40min", tipo: "Fono", nota: "Trabalho em articulação. Progresso em fonemas bilabiais." },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <h3 className="font-heading font-semibold text-foreground">Sessões Recentes</h3>
-      <div className="space-y-3">
-        {sessoesMock.map((s, i) => (
-          <div key={i} className="rounded-lg border border-border bg-card p-4">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <Badge variant="outline">{s.data}</Badge>
-              <Badge variant="secondary">{s.tipo}</Badge>
-              <span className="text-xs text-muted-foreground">{s.duracao}</span>
-            </div>
-            <p className="text-sm text-foreground">{s.nota}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {s.profissional}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function PlaceholderAba({ titulo }: { titulo: string }) {
   return (
