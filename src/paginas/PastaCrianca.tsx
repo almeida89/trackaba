@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
@@ -203,7 +204,7 @@ export default function PastaCrianca() {
       case "programas":
         return <ConteudoProgramas />;
       case "sessoes":
-        return <ConteudoSessoes />;
+        return <SessoesCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
