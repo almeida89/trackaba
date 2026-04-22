@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
+import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
@@ -174,7 +175,7 @@ export default function PastaCrianca() {
       case "cadastro":
         return <ConteudoCadastro />;
       case "programas":
-        return <ConteudoProgramas />;
+        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
       case "sessoes":
         return <SessoesCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
       default:
