@@ -13,7 +13,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { BookMarked, Library, Plus, Search } from "lucide-react";
+import { BookMarked, Library, Plus, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,12 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
 
   const bibliotecaFiltrada = filtrar(biblioteca);
   const programasFiltradosCrianca = filtrar(programasDaCrianca);
+  const filtrosAtivos = busca.trim() !== "" || filtroDisciplina !== "todas";
+
+  function limparFiltros() {
+    setBusca("");
+    setFiltroDisciplina("todas");
+  }
 
   function aoArrastarFim(evento: DragEndEvent) {
     const { active, over } = evento;
