@@ -13,7 +13,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { BookMarked, Library, Plus, Search } from "lucide-react";
+import { BookMarked, Library, Plus, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,12 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
 
   const bibliotecaFiltrada = filtrar(biblioteca);
   const programasFiltradosCrianca = filtrar(programasDaCrianca);
+  const filtrosAtivos = busca.trim() !== "" || filtroDisciplina !== "todas";
+
+  function limparFiltros() {
+    setBusca("");
+    setFiltroDisciplina("todas");
+  }
 
   function aoArrastarFim(evento: DragEndEvent) {
     const { active, over } = evento;
@@ -171,7 +177,7 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar programa..."
+            placeholder="Buscar em ambas as abas..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             className="pl-9"
@@ -190,15 +196,35 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
             <SelectItem value="Psicopedagogia">Psicopedagogia</SelectItem>
           </SelectContent>
         </Select>
+        {filtrosAtivos && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={limparFiltros}
+            className="gap-1 text-muted-foreground"
+          >
+            <X className="h-3.5 w-3.5" /> Limpar
+          </Button>
+        )}
       </Card>
+
+      {filtrosAtivos && (
+        <p className="text-xs text-muted-foreground -mt-1">
+          Filtros aplicados a ambas as abas •{" "}
+          <span className="font-medium text-foreground">{programasFiltradosCrianca.length}</span> da criança •{" "}
+          <span className="font-medium text-foreground">{bibliotecaFiltrada.length}</span> na biblioteca
+        </p>
+      )}
 
       <Tabs value={aba} onValueChange={(v) => setAba(v as "crianca" | "biblioteca")}>
         <TabsList>
           <TabsTrigger value="crianca" className="gap-2">
-            <BookMarked className="h-4 w-4" /> Da criança ({programasDaCrianca.length})
+            <BookMarked className="h-4 w-4" />
+            Da criança ({filtrosAtivos ? `${programasFiltradosCrianca.length}/${programasDaCrianca.length}` : programasDaCrianca.length})
           </TabsTrigger>
           <TabsTrigger value="biblioteca" className="gap-2">
-            <Library className="h-4 w-4" /> Biblioteca ({biblioteca.length})
+            <Library className="h-4 w-4" />
+            Biblioteca ({filtrosAtivos ? `${bibliotecaFiltrada.length}/${biblioteca.length}` : biblioteca.length})
           </TabsTrigger>
         </TabsList>
 
