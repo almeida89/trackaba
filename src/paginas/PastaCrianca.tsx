@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
+import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
@@ -80,82 +81,6 @@ function ConteudoCadastro() {
   );
 }
 
-function ConteudoProgramas() {
-  const programasMock = [
-    { nome: "Comunicação Funcional", objetivo: "Solicitar itens usando PECS", progresso: 65, nivel: "AG" },
-    { nome: "Habilidades Sociais", objetivo: "Iniciar interação com pares", progresso: 40, nivel: "AFL" },
-    { nome: "Autonomia - AVDs", objetivo: "Escovar os dentes de forma independente", progresso: 80, nivel: "IND" },
-    { nome: "Regulação Emocional", objetivo: "Identificar emoções básicas em figuras", progresso: 55, nivel: "AG" },
-  ];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-heading font-semibold text-foreground">Programas Ativos</h3>
-        <Badge variant="outline" className="text-xs">
-          {programasMock.length} programas
-        </Badge>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2">
-        {niveisDesempenho.map((n) => (
-          <span
-            key={n.sigla}
-            className={cn("text-xs px-2 py-1 rounded-md font-medium", n.cor)}
-          >
-            {n.sigla} — {n.nome}
-          </span>
-        ))}
-      </div>
-
-      <div className="space-y-3">
-        {programasMock.map((prog, i) => {
-          const nivel = niveisDesempenho.find((n) => n.sigla === prog.nivel);
-          return (
-            <div
-              key={i}
-              className="rounded-lg border border-border bg-card p-4 hover:shadow-sm transition-shadow"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h4 className="font-medium text-foreground">{prog.nome}</h4>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {prog.objetivo}
-                  </p>
-                </div>
-                {nivel && (
-                  <span
-                    className={cn(
-                      "text-xs px-2 py-1 rounded-md font-semibold shrink-0",
-                      nivel.cor
-                    )}
-                  >
-                    {nivel.sigla}
-                  </span>
-                )}
-              </div>
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                  <span>Progresso</span>
-                  <span>{prog.progresso}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all"
-                    style={{ width: `${prog.progresso}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-
 function PlaceholderAba({ titulo }: { titulo: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -174,7 +99,7 @@ export default function PastaCrianca() {
       case "cadastro":
         return <ConteudoCadastro />;
       case "programas":
-        return <ConteudoProgramas />;
+        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
       case "sessoes":
         return <SessoesCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
       default:
