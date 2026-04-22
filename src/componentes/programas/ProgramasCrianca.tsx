@@ -36,6 +36,7 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
   const [programasCrianca, setProgramasCrianca] = useState<Programa[]>(PROGRAMAS_CRIANCA_INICIAIS);
   const [busca, setBusca] = useState("");
   const [filtroDisciplina, setFiltroDisciplina] = useState<string>("todas");
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [aba, setAba] = useState<"crianca" | "biblioteca">("crianca");
   const [dialogoAberto, setDialogoAberto] = useState(false);
   const [programaEdicao, setProgramaEdicao] = useState<Programa | null>(null);
@@ -60,17 +61,20 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
         p.nome.toLowerCase().includes(busca.toLowerCase()) ||
         p.objetivoGeral.toLowerCase().includes(busca.toLowerCase());
       const correspondeDisciplina = filtroDisciplina === "todas" || p.disciplina === filtroDisciplina;
-      return correspondeBusca && correspondeDisciplina;
+      const correspondeStatus = filtroStatus === "todos" || p.status === filtroStatus;
+      return correspondeBusca && correspondeDisciplina && correspondeStatus;
     });
   }
 
   const bibliotecaFiltrada = filtrar(biblioteca);
   const programasFiltradosCrianca = filtrar(programasDaCrianca);
-  const filtrosAtivos = busca.trim() !== "" || filtroDisciplina !== "todas";
+  const filtrosAtivos =
+    busca.trim() !== "" || filtroDisciplina !== "todas" || filtroStatus !== "todos";
 
   function limparFiltros() {
     setBusca("");
     setFiltroDisciplina("todas");
+    setFiltroStatus("todos");
   }
 
   function aoArrastarFim(evento: DragEndEvent) {
@@ -194,6 +198,17 @@ export function ProgramasCrianca({ criancaId, criancaNome }: Props) {
             <SelectItem value="Terapia Ocupacional">Terapia Ocupacional</SelectItem>
             <SelectItem value="Psicologia">Psicologia</SelectItem>
             <SelectItem value="Psicopedagogia">Psicopedagogia</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+          <SelectTrigger className="w-full md:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os status</SelectItem>
+            <SelectItem value="ativo">Ativo</SelectItem>
+            <SelectItem value="pausado">Em planejamento</SelectItem>
+            <SelectItem value="concluido">Concluído</SelectItem>
           </SelectContent>
         </Select>
         {filtrosAtivos && (
