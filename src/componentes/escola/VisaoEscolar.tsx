@@ -4,6 +4,7 @@ import {
   Baby,
   CalendarCheck2,
   ClipboardList,
+  Download,
   FileBarChart,
   GraduationCap,
   Lock,
@@ -11,6 +12,8 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
+import { gerarRelatorioEscolaPDF } from "./relatorioEscolaPdf";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +72,20 @@ export function VisaoEscolar({ acesso, aoVoltar }: Props) {
   const podeVerRelatorios = acesso.permissoes.verRelatorios;
   const podeVerIncidentes = acesso.permissoes.verIncidentes;
 
+  const podeExportar =
+    acesso.status === "ativo" &&
+    (podeVerSessoes || podeVerEvolucao || podeVerProgramas);
+
+  const exportarPdf = () => {
+    try {
+      gerarRelatorioEscolaPDF(acesso);
+      toast.success("Relatório PDF gerado com sucesso");
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao gerar o PDF");
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Cabeçalho do acesso */}
@@ -86,9 +103,24 @@ export function VisaoEscolar({ acesso, aoVoltar }: Props) {
             </p>
           </div>
         </div>
-        <Badge variant="outline" className={CORES_STATUS_ACESSO[acesso.status]}>
-          Acesso {ROTULOS_STATUS_ACESSO[acesso.status]}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className={CORES_STATUS_ACESSO[acesso.status]}>
+            Acesso {ROTULOS_STATUS_ACESSO[acesso.status]}
+          </Badge>
+          <Button
+            size="sm"
+            onClick={exportarPdf}
+            disabled={!podeExportar}
+            className="gap-2"
+            title={
+              podeExportar
+                ? "Gerar PDF respeitando as permissões"
+                : "Acesso inativo ou sem permissões para exportar"
+            }
+          >
+            <Download className="h-4 w-4" /> Exportar PDF
+          </Button>
+        </div>
       </div>
 
       {/* Banner de escopo */}
