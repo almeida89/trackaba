@@ -14,6 +14,7 @@ import PaginaProgramas from "@/paginas/PaginaProgramas";
 import PaginaSessoes from "@/paginas/PaginaSessoes";
 import PaginaEscola from "@/paginas/PaginaEscola";
 import PaginaFuncionarios from "@/paginas/PaginaFuncionarios";
+import PaginaFamilia from "@/paginas/PaginaFamilia";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
