@@ -13,6 +13,7 @@ import PaginaGraficos from "@/paginas/PaginaGraficos";
 import PaginaProgramas from "@/paginas/PaginaProgramas";
 import PaginaSessoes from "@/paginas/PaginaSessoes";
 import PaginaEscola from "@/paginas/PaginaEscola";
+import PaginaFuncionarios from "@/paginas/PaginaFuncionarios";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -28,7 +29,7 @@ const App = () => (
             <Route path="/" element={<PainelPrincipal />} />
             <Route path="/criancas" element={<ListaCriancas />} />
             <Route path="/criancas/:id" element={<PastaCrianca />} />
-            <Route path="/funcionarios" element={<PaginaModulo />} />
+            <Route path="/funcionarios" element={<PaginaFuncionarios />} />
             <Route path="/sessoes" element={<PaginaSessoes />} />
             <Route path="/programas" element={<PaginaProgramas />} />
             <Route path="/avaliacoes" element={<PaginaModulo />} />
