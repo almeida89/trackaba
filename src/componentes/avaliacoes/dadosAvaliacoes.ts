@@ -1,0 +1,176 @@
+import { Avaliacao, ItemChecklistAnamnese, ProtocoloAvaliacao } from "./tiposAvaliacoes";
+
+export const protocolosDisponiveis: { valor: ProtocoloAvaliacao; descricao: string; faixaEtaria: string }[] = [
+  { valor: "VB-MAPP", descricao: "Avaliação de marcos comportamentais verbais", faixaEtaria: "0–4 anos" },
+  { valor: "ABLLS-R", descricao: "Habilidades básicas de linguagem e aprendizagem", faixaEtaria: "2–6 anos" },
+  { valor: "AFLS", descricao: "Habilidades funcionais para a vida", faixaEtaria: "Todas as idades" },
+  { valor: "Vineland-3", descricao: "Comportamento adaptativo", faixaEtaria: "0–90 anos" },
+  { valor: "PEP-3", descricao: "Perfil psicoeducacional", faixaEtaria: "2–7 anos" },
+  { valor: "Anamnese", descricao: "Entrevista clínica inicial com responsáveis", faixaEtaria: "Todas as idades" },
+  { valor: "Checklist", descricao: "Lista de verificação personalizada", faixaEtaria: "Todas as idades" },
+];
+
+export const dominiosPorProtocolo: Record<ProtocoloAvaliacao, { nome: string; pontuacaoMaxima: number }[]> = {
+  "VB-MAPP": [
+    { nome: "Mando", pontuacaoMaxima: 15 },
+    { nome: "Tato", pontuacaoMaxima: 15 },
+    { nome: "Ecóico", pontuacaoMaxima: 10 },
+    { nome: "Intraverbal", pontuacaoMaxima: 15 },
+    { nome: "Brincar", pontuacaoMaxima: 10 },
+    { nome: "Comportamento social", pontuacaoMaxima: 10 },
+    { nome: "Imitação motora", pontuacaoMaxima: 10 },
+  ],
+  "ABLLS-R": [
+    { nome: "Cooperação e reforçadores", pontuacaoMaxima: 20 },
+    { nome: "Linguagem receptiva", pontuacaoMaxima: 30 },
+    { nome: "Linguagem expressiva", pontuacaoMaxima: 30 },
+    { nome: "Imitação", pontuacaoMaxima: 20 },
+    { nome: "Habilidades acadêmicas", pontuacaoMaxima: 25 },
+  ],
+  "AFLS": [
+    { nome: "Habilidades básicas de vida", pontuacaoMaxima: 40 },
+    { nome: "Habilidades domésticas", pontuacaoMaxima: 30 },
+    { nome: "Habilidades comunitárias", pontuacaoMaxima: 30 },
+    { nome: "Habilidades vocacionais", pontuacaoMaxima: 25 },
+  ],
+  "Vineland-3": [
+    { nome: "Comunicação", pontuacaoMaxima: 100 },
+    { nome: "Vida diária", pontuacaoMaxima: 100 },
+    { nome: "Socialização", pontuacaoMaxima: 100 },
+    { nome: "Habilidades motoras", pontuacaoMaxima: 100 },
+  ],
+  "PEP-3": [
+    { nome: "Cognição verbal", pontuacaoMaxima: 50 },
+    { nome: "Linguagem expressiva", pontuacaoMaxima: 40 },
+    { nome: "Linguagem receptiva", pontuacaoMaxima: 40 },
+    { nome: "Motor fino", pontuacaoMaxima: 30 },
+    { nome: "Motor grosso", pontuacaoMaxima: 30 },
+  ],
+  "Anamnese": [
+    { nome: "Histórico clínico", pontuacaoMaxima: 10 },
+    { nome: "Desenvolvimento", pontuacaoMaxima: 10 },
+    { nome: "Comportamento", pontuacaoMaxima: 10 },
+    { nome: "Família e contexto", pontuacaoMaxima: 10 },
+  ],
+  "Checklist": [
+    { nome: "Itens observados", pontuacaoMaxima: 20 },
+  ],
+};
+
+export const checklistAnamnese: ItemChecklistAnamnese[] = [
+  { id: "an1", categoria: "Gestação e parto", pergunta: "Como foi a gestação? Houve intercorrências?" },
+  { id: "an2", categoria: "Gestação e parto", pergunta: "Tipo de parto e idade gestacional?" },
+  { id: "an3", categoria: "Desenvolvimento", pergunta: "Idade em que começou a sentar, engatinhar e andar?" },
+  { id: "an4", categoria: "Desenvolvimento", pergunta: "Idade das primeiras palavras e frases?" },
+  { id: "an5", categoria: "Comportamento", pergunta: "Apresenta comportamentos repetitivos (estereotipias)?" },
+  { id: "an6", categoria: "Comportamento", pergunta: "Como reage a mudanças de rotina?" },
+  { id: "an7", categoria: "Sensorial", pergunta: "Possui sensibilidade a sons, texturas ou luzes?" },
+  { id: "an8", categoria: "Social", pergunta: "Mantém contato visual? Interage com outras crianças?" },
+  { id: "an9", categoria: "Família", pergunta: "Composição familiar e principais cuidadores?" },
+  { id: "an10", categoria: "Escolar", pergunta: "Frequenta escola? Há queixas pedagógicas?" },
+];
+
+export const avaliacoesIniciais: Avaliacao[] = [
+  {
+    id: "av-001",
+    criancaId: "1",
+    criancaNome: "Lucas Almeida",
+    protocolo: "VB-MAPP",
+    titulo: "VB-MAPP — Avaliação de marcos iniciais",
+    status: "concluida",
+    dataInicio: "2025-02-10",
+    dataConclusao: "2025-02-24",
+    responsavel: "Dra. Ana Carolina",
+    cargoResponsavel: "Analista do Comportamento",
+    dominios: [
+      { id: "d1", nome: "Mando", pontuacao: 11, pontuacaoMaxima: 15 },
+      { id: "d2", nome: "Tato", pontuacao: 9, pontuacaoMaxima: 15 },
+      { id: "d3", nome: "Ecóico", pontuacao: 7, pontuacaoMaxima: 10 },
+      { id: "d4", nome: "Intraverbal", pontuacao: 6, pontuacaoMaxima: 15 },
+      { id: "d5", nome: "Brincar", pontuacao: 8, pontuacaoMaxima: 10 },
+      { id: "d6", nome: "Comportamento social", pontuacao: 7, pontuacaoMaxima: 10 },
+      { id: "d7", nome: "Imitação motora", pontuacao: 9, pontuacaoMaxima: 10 },
+    ],
+    pontuacaoTotal: 57,
+    pontuacaoMaxima: 85,
+    resumoClinico: "Lucas demonstra bom repertório de imitação e brincar funcional. Intraverbal é a área mais defasada e deve ser priorizada.",
+    proximosPassos: "Iniciar programas focados em intraverbal e expansão de tato com estímulos visuais.",
+    proximaReavaliacao: "2025-08-10",
+  },
+  {
+    id: "av-002",
+    criancaId: "2",
+    criancaNome: "Maria Eduarda",
+    protocolo: "ABLLS-R",
+    titulo: "ABLLS-R — Linha de base",
+    status: "em_andamento",
+    dataInicio: "2025-04-05",
+    responsavel: "Bruno Tavares",
+    cargoResponsavel: "Terapeuta ABA",
+    dominios: [
+      { id: "d1", nome: "Cooperação e reforçadores", pontuacao: 14, pontuacaoMaxima: 20 },
+      { id: "d2", nome: "Linguagem receptiva", pontuacao: 18, pontuacaoMaxima: 30 },
+      { id: "d3", nome: "Linguagem expressiva", pontuacao: 12, pontuacaoMaxima: 30 },
+      { id: "d4", nome: "Imitação", pontuacao: 15, pontuacaoMaxima: 20 },
+      { id: "d5", nome: "Habilidades acadêmicas", pontuacao: 10, pontuacaoMaxima: 25 },
+    ],
+    pontuacaoTotal: 69,
+    pontuacaoMaxima: 125,
+    resumoClinico: "Avaliação parcial. Aguardando coleta de dados de linguagem expressiva em ambiente natural.",
+  },
+  {
+    id: "av-003",
+    criancaId: "3",
+    criancaNome: "Pedro Henrique",
+    protocolo: "Anamnese",
+    titulo: "Anamnese inicial com responsáveis",
+    status: "concluida",
+    dataInicio: "2025-03-15",
+    dataConclusao: "2025-03-15",
+    responsavel: "Dra. Ana Carolina",
+    cargoResponsavel: "Analista do Comportamento",
+    dominios: [
+      { id: "d1", nome: "Histórico clínico", pontuacao: 9, pontuacaoMaxima: 10 },
+      { id: "d2", nome: "Desenvolvimento", pontuacao: 8, pontuacaoMaxima: 10 },
+      { id: "d3", nome: "Comportamento", pontuacao: 7, pontuacaoMaxima: 10 },
+      { id: "d4", nome: "Família e contexto", pontuacao: 9, pontuacaoMaxima: 10 },
+    ],
+    pontuacaoTotal: 33,
+    pontuacaoMaxima: 40,
+    resumoClinico: "Família engajada. Pedro tem diagnóstico fechado de TEA nível 2. Boa rede de apoio.",
+    proximosPassos: "Aplicar VB-MAPP nas próximas duas semanas.",
+  },
+  {
+    id: "av-004",
+    criancaId: "1",
+    criancaNome: "Lucas Almeida",
+    protocolo: "AFLS",
+    titulo: "AFLS — Habilidades funcionais",
+    status: "rascunho",
+    dataInicio: "2025-04-20",
+    responsavel: "Carla Mendes",
+    cargoResponsavel: "Terapeuta Ocupacional",
+    dominios: [
+      { id: "d1", nome: "Habilidades básicas de vida", pontuacao: 0, pontuacaoMaxima: 40 },
+      { id: "d2", nome: "Habilidades domésticas", pontuacao: 0, pontuacaoMaxima: 30 },
+      { id: "d3", nome: "Habilidades comunitárias", pontuacao: 0, pontuacaoMaxima: 30 },
+      { id: "d4", nome: "Habilidades vocacionais", pontuacao: 0, pontuacaoMaxima: 25 },
+    ],
+    pontuacaoTotal: 0,
+    pontuacaoMaxima: 125,
+  },
+];
+
+export const rotuloStatus: Record<Avaliacao["status"], string> = {
+  rascunho: "Rascunho",
+  em_andamento: "Em andamento",
+  concluida: "Concluída",
+  revisao: "Em revisão",
+};
+
+export const corStatus: Record<Avaliacao["status"], string> = {
+  rascunho: "bg-muted text-muted-foreground",
+  em_andamento: "bg-warning/15 text-warning border-warning/30",
+  concluida: "bg-success/15 text-success border-success/30",
+  revisao: "bg-info/15 text-info border-info/30",
+};
