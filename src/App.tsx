@@ -18,6 +18,7 @@ import PaginaFamilia from "@/paginas/PaginaFamilia";
 import PaginaRelatorios from "@/paginas/PaginaRelatorios";
 import PaginaAvaliacoes from "@/paginas/PaginaAvaliacoes";
 import PaginaConfiguracoes from "@/paginas/PaginaConfiguracoes";
+import PaginaLogs from "@/paginas/PaginaLogs";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -44,7 +45,7 @@ const App = () => (
             <Route path="/graficos" element={<PaginaGraficos />} />
             <Route path="/automacoes" element={<PaginaModulo />} />
             <Route path="/configuracoes" element={<PaginaConfiguracoes />} />
-            <Route path="/logs" element={<PaginaModulo />} />
+            <Route path="/logs" element={<PaginaLogs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </LayoutPrincipal>
