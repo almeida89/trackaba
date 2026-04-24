@@ -72,9 +72,9 @@ export default function PaginaAvaliacoes() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <CartaoEstatistica titulo="Total" valor={stats.total} icone={ClipboardList} />
-        <CartaoEstatistica titulo="Concluídas" valor={stats.concluidas} icone={FileCheck2} corIcone="text-success" />
-        <CartaoEstatistica titulo="Em andamento" valor={stats.andamento} icone={Clock} corIcone="text-warning" />
-        <CartaoEstatistica titulo="Rascunho/Revisão" valor={stats.pendentes} icone={AlertCircle} corIcone="text-info" />
+        <CartaoEstatistica titulo="Concluídas" valor={stats.concluidas} icone={FileCheck2} variante="sucesso" />
+        <CartaoEstatistica titulo="Em andamento" valor={stats.andamento} icone={Clock} variante="aviso" />
+        <CartaoEstatistica titulo="Rascunho/Revisão" valor={stats.pendentes} icone={AlertCircle} variante="info" />
       </div>
 
       <Tabs defaultValue="lista" className="w-full">
