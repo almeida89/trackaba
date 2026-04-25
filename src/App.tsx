@@ -6,7 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RotaProtegida } from "@/componentes/RotaProtegida";
+import { RotaAdmin } from "@/componentes/RotaAdmin";
 import PaginaAuth from "@/paginas/PaginaAuth";
+import PaginaUsuarios from "@/paginas/PaginaUsuarios";
 import PainelPrincipal from "@/paginas/PainelPrincipal";
 import ListaCriancas from "@/paginas/ListaCriancas";
 import PastaCrianca from "@/paginas/PastaCrianca";
@@ -42,6 +44,7 @@ const RotasInternas = () => (
       <Route path="/relatorios" element={<PaginaRelatorios />} />
       <Route path="/graficos" element={<PaginaGraficos />} />
       <Route path="/automacoes" element={<PaginaModulo />} />
+      <Route path="/usuarios" element={<RotaAdmin><PaginaUsuarios /></RotaAdmin>} />
       <Route path="/configuracoes" element={<PaginaConfiguracoes />} />
       <Route path="/logs" element={<PaginaLogs />} />
       <Route path="*" element={<NotFound />} />

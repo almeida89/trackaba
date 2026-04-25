@@ -13,6 +13,7 @@ import {
   Zap,
   Settings,
   Shield,
+  UserCog,
   ChevronLeft,
   Menu,
   LogOut,
@@ -27,7 +28,14 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-const itensMenu = [
+interface ItemMenu {
+  titulo: string;
+  url: string;
+  icone: typeof LayoutDashboard;
+  somenteAdmin?: boolean;
+}
+
+const itensMenu: ItemMenu[] = [
   { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
   { titulo: "Crianças", url: "/criancas", icone: Baby },
   { titulo: "Funcionários", url: "/funcionarios", icone: Users },
@@ -40,6 +48,7 @@ const itensMenu = [
   { titulo: "Relatórios", url: "/relatorios", icone: FileText },
   { titulo: "Gráficos", url: "/graficos", icone: BarChart3 },
   { titulo: "Automações", url: "/automacoes", icone: Zap },
+  { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
   { titulo: "Configurações", url: "/configuracoes", icone: Settings },
   { titulo: "Logs / Auditoria", url: "/logs", icone: Shield },
 ];
@@ -47,7 +56,8 @@ const itensMenu = [
 export function BarraLateral() {
   const [recolhida, setRecolhida] = useState(false);
   const { user, sair } = useAuth();
-  const { papel, perfil } = useUserRole();
+  const { papel, perfil, isAdmin } = useUserRole();
+  const itensVisiveis = itensMenu.filter((i) => !i.somenteAdmin || isAdmin);
   const navigate = useNavigate();
 
   const aoSair = async () => {
@@ -104,7 +114,7 @@ export function BarraLateral() {
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-          {itensMenu.map((item) => (
+          {itensVisiveis.map((item) => (
             <NavLink
               key={item.url}
               to={item.url}
