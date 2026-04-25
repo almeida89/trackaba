@@ -46,6 +46,15 @@ const itensMenu = [
 
 export function BarraLateral() {
   const [recolhida, setRecolhida] = useState(false);
+  const { user, sair } = useAuth();
+  const { papel, perfil } = useUserRole();
+  const navigate = useNavigate();
+
+  const aoSair = async () => {
+    await sair();
+    toast.success("Sessão encerrada.");
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <>
