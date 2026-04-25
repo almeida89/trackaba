@@ -203,6 +203,11 @@ export default function PaginaConfiguracoes() {
           </Card>
         </TabsContent>
 
+        {/* USUÁRIOS */}
+        <TabsContent value="usuarios" className="pt-4">
+          <AbaUsuarios />
+        </TabsContent>
+
         {/* NOTIFICAÇÕES */}
         <TabsContent value="notificacoes" className="pt-4">
           <Card className="p-6 space-y-4">
