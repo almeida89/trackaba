@@ -121,12 +121,46 @@ export function BarraLateral() {
           ))}
         </nav>
 
-        {/* Footer */}
-        {!recolhida && (
-          <div className="px-4 py-3 border-t border-sidebar-border text-xs text-sidebar-foreground/50">
-            © 2026 TrackABA
-          </div>
-        )}
+        {/* User + Footer */}
+        <div className="border-t border-sidebar-border shrink-0">
+          {!recolhida ? (
+            <div className="px-3 py-3 space-y-2">
+              <div className="px-2">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {perfil?.nome_completo || user?.email}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  {papel && (
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wide border-sidebar-border text-sidebar-foreground/70">
+                      {rotuloPapel[papel]}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={aoSair}
+                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <LogOut className="h-4 w-4 mr-2" /> Sair
+              </Button>
+              <p className="px-2 text-[10px] text-sidebar-foreground/40">© 2026 TrackABA</p>
+            </div>
+          ) : (
+            <div className="py-3 flex justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={aoSair}
+                className="text-sidebar-foreground hover:bg-sidebar-accent"
+                aria-label="Sair"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
       </aside>
     </>
   );
