@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
-import { Activity, AlertTriangle, ShieldAlert, Search, Download, Eye, Filter } from "lucide-react";
+import { Activity, AlertTriangle, ShieldAlert, Search, Download, Eye, Filter, FileText, FileSpreadsheet } from "lucide-react";
 import { logsIniciais, rotuloAcao, rotuloCategoria, corSeveridade } from "@/componentes/logs/dadosLogs";
 import { RegistroLog } from "@/componentes/logs/tiposLogs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function PaginaLogs() {
   const [logs] = useState<RegistroLog[]>(logsIniciais);
@@ -20,18 +22,21 @@ export default function PaginaLogs() {
   const [filtroAcao, setFiltroAcao] = useState("todas");
   const [filtroSeveridade, setFiltroSeveridade] = useState("todas");
   const [filtroUsuario, setFiltroUsuario] = useState("todos");
-  const [periodo, setPeriodo] = useState("24h");
+  const hoje = new Date().toISOString().slice(0, 10);
+  const seteDiasAtras = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+  const [dataInicio, setDataInicio] = useState(seteDiasAtras);
+  const [dataFim, setDataFim] = useState(hoje);
   const [detalhe, setDetalhe] = useState<RegistroLog | null>(null);
 
   const usuariosUnicos = useMemo(() => Array.from(new Set(logs.map((l) => l.usuario))), [logs]);
 
   const filtrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
-    const limite = periodo === "todos" ? 0 : Number(periodo.replace("h", "")) * 3600 * 1000;
-    const corte = limite ? Date.now() - limite : 0;
+    const inicio = dataInicio ? new Date(dataInicio + "T00:00:00").getTime() : 0;
+    const fim = dataFim ? new Date(dataFim + "T23:59:59").getTime() : Number.MAX_SAFE_INTEGER;
     return logs.filter((l) => {
       const dt = new Date(l.dataHora).getTime();
-      const okPeriodo = !corte || dt >= corte;
+      const okPeriodo = dt >= inicio && dt <= fim;
       const okBusca = !termo
         || l.descricao.toLowerCase().includes(termo)
         || l.recurso.toLowerCase().includes(termo)
@@ -43,16 +48,23 @@ export default function PaginaLogs() {
       const okUsr = filtroUsuario === "todos" || l.usuario === filtroUsuario;
       return okPeriodo && okBusca && okCat && okAcao && okSev && okUsr;
     });
-  }, [logs, busca, filtroCategoria, filtroAcao, filtroSeveridade, filtroUsuario, periodo]);
+  }, [logs, busca, filtroCategoria, filtroAcao, filtroSeveridade, filtroUsuario, dataInicio, dataFim]);
 
   const stats = useMemo(() => ({
-    total: logs.length,
-    avisos: logs.filter((l) => l.severidade === "aviso").length,
-    erros: logs.filter((l) => l.severidade === "erro" || l.severidade === "critico").length,
-    usuariosAtivos: usuariosUnicos.filter((u) => u !== "sistema").length,
-  }), [logs, usuariosUnicos]);
+    total: filtrados.length,
+    avisos: filtrados.filter((l) => l.severidade === "aviso").length,
+    erros: filtrados.filter((l) => l.severidade === "erro" || l.severidade === "critico").length,
+    usuariosAtivos: Array.from(new Set(filtrados.map((l) => l.usuario))).filter((u) => u !== "sistema").length,
+  }), [filtrados]);
+
+  const formatarBR = (iso: string) =>
+    new Date(iso + "T00:00:00").toLocaleDateString("pt-BR");
 
   const exportarCsv = () => {
+    if (filtrados.length === 0) {
+      toast.error("Nenhum registro no intervalo selecionado");
+      return;
+    }
     const headers = ["Data/hora", "Usuário", "Cargo", "Ação", "Categoria", "Recurso", "Descrição", "IP", "Dispositivo", "Severidade"];
     const linhas = filtrados.map((l) => [
       new Date(l.dataHora).toLocaleString("pt-BR"),
@@ -73,10 +85,89 @@ export default function PaginaLogs() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `logs-auditoria-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `logs-auditoria-${dataInicio}_a_${dataFim}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`${filtrados.length} registros exportados`);
+    toast.success(`${filtrados.length} registros exportados em CSV`);
+  };
+
+  const exportarPdf = () => {
+    if (filtrados.length === 0) {
+      toast.error("Nenhum registro no intervalo selecionado");
+      return;
+    }
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const larguraPagina = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relatório de Logs / Auditoria", 40, 40);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(
+      `Período: ${formatarBR(dataInicio)} até ${formatarBR(dataFim)}`,
+      40,
+      60
+    );
+    doc.text(
+      `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+      40,
+      75
+    );
+
+    doc.setTextColor(0);
+    doc.setFontSize(10);
+    const resumo = `Total: ${stats.total}  •  Avisos: ${stats.avisos}  •  Erros/Críticos: ${stats.erros}  •  Usuários ativos: ${stats.usuariosAtivos}`;
+    doc.text(resumo, 40, 95);
+
+    autoTable(doc, {
+      startY: 110,
+      head: [["Data/hora", "Usuário", "Cargo", "Ação", "Categoria", "Descrição", "IP", "Severidade"]],
+      body: filtrados.map((l) => [
+        new Date(l.dataHora).toLocaleString("pt-BR"),
+        l.usuario,
+        l.cargoUsuario,
+        rotuloAcao[l.acao],
+        rotuloCategoria[l.categoria],
+        l.descricao,
+        l.ip,
+        l.severidade.toUpperCase(),
+      ]),
+      styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
+      headStyles: { fillColor: [30, 64, 175], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { cellWidth: 130 },
+        2: { cellWidth: 70 },
+        3: { cellWidth: 60 },
+        4: { cellWidth: 70 },
+        5: { cellWidth: 220 },
+        6: { cellWidth: 75 },
+        7: { cellWidth: 60 },
+      },
+      didDrawPage: (data) => {
+        const pagina = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `Página ${data.pageNumber} de ${pagina}  •  Documento confidencial — uso interno`,
+          40,
+          doc.internal.pageSize.getHeight() - 20
+        );
+      },
+      margin: { left: 40, right: 40 },
+    });
+
+    doc.save(`logs-auditoria-${dataInicio}_a_${dataFim}.pdf`);
+    toast.success(`${filtrados.length} registros exportados em PDF`);
+  };
+
+  const aplicarPreset = (dias: number) => {
+    setDataFim(hoje);
+    setDataInicio(new Date(Date.now() - dias * 24 * 3600 * 1000).toISOString().slice(0, 10));
   };
 
   return (
@@ -85,35 +176,63 @@ export default function PaginaLogs() {
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">Logs / Auditoria</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Histórico completo das ações realizadas no sistema, com filtros e exportação para conformidade.
+            Histórico completo das ações no sistema. Selecione o intervalo de datas e exporte em CSV ou PDF.
           </p>
         </div>
-        <Button onClick={exportarCsv} variant="outline">
-          <Download className="h-4 w-4 mr-2" /> Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={exportarCsv} variant="outline">
+            <FileSpreadsheet className="h-4 w-4 mr-2" /> Exportar CSV
+          </Button>
+          <Button onClick={exportarPdf}>
+            <FileText className="h-4 w-4 mr-2" /> Exportar PDF
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <CartaoEstatistica titulo="Eventos registrados" valor={stats.total} icone={Activity} />
+        <CartaoEstatistica titulo="Eventos no período" valor={stats.total} icone={Activity} />
         <CartaoEstatistica titulo="Avisos" valor={stats.avisos} icone={AlertTriangle} variante="aviso" />
         <CartaoEstatistica titulo="Erros / Críticos" valor={stats.erros} icone={ShieldAlert} variante="sucesso" />
         <CartaoEstatistica titulo="Usuários ativos" valor={stats.usuariosAtivos} icone={Eye} variante="info" />
       </div>
 
-      <Card className="p-4 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Filter className="h-4 w-4" /> Filtros
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-          <div className="relative lg:col-span-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar usuário, recurso, IP..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="pl-9"
-            />
+      <Card className="p-4 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Filter className="h-4 w-4" /> Intervalo de datas e filtros
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="ghost" onClick={() => aplicarPreset(1)}>Hoje</Button>
+            <Button size="sm" variant="ghost" onClick={() => aplicarPreset(7)}>7 dias</Button>
+            <Button size="sm" variant="ghost" onClick={() => aplicarPreset(30)}>30 dias</Button>
+            <Button size="sm" variant="ghost" onClick={() => aplicarPreset(90)}>90 dias</Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Data inicial</Label>
+            <Input type="date" value={dataInicio} max={dataFim} onChange={(e) => setDataInicio(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Data final</Label>
+            <Input type="date" value={dataFim} min={dataInicio} max={hoje} onChange={(e) => setDataFim(e.target.value)} />
+          </div>
+          <div className="space-y-1 lg:col-span-2">
+            <Label className="text-xs">Buscar</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Usuário, recurso, descrição, IP..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
             <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
             <SelectContent>
@@ -142,21 +261,8 @@ export default function PaginaLogs() {
               <SelectItem value="critico">Crítico</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={periodo} onValueChange={setPeriodo}>
-            <SelectTrigger><SelectValue placeholder="Período" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="1h">Última hora</SelectItem>
-              <SelectItem value="24h">Últimas 24h</SelectItem>
-              <SelectItem value="168h">Últimos 7 dias</SelectItem>
-              <SelectItem value="720h">Últimos 30 dias</SelectItem>
-              <SelectItem value="todos">Todo o histórico</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-          <span>Mostrando <strong>{filtrados.length}</strong> de <strong>{logs.length}</strong> registros</span>
           <Select value={filtroUsuario} onValueChange={setFiltroUsuario}>
-            <SelectTrigger className="w-56 h-8 text-xs"><SelectValue placeholder="Usuário" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Usuário" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os usuários</SelectItem>
               {usuariosUnicos.map((u) => (
@@ -164,6 +270,11 @@ export default function PaginaLogs() {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="text-xs text-muted-foreground pt-1">
+          Mostrando <strong>{filtrados.length}</strong> de <strong>{logs.length}</strong> registros — período{" "}
+          <strong>{formatarBR(dataInicio)}</strong> até <strong>{formatarBR(dataFim)}</strong>.
         </div>
       </Card>
 
@@ -208,7 +319,7 @@ export default function PaginaLogs() {
             {filtrados.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-12">
-                  Nenhum registro encontrado com os filtros atuais.
+                  Nenhum registro encontrado no intervalo selecionado.
                 </TableCell>
               </TableRow>
             )}
