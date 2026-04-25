@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
+import { AuthProvider } from "@/hooks/useAuth";
+import { RotaProtegida } from "@/componentes/RotaProtegida";
+import PaginaAuth from "@/paginas/PaginaAuth";
 import PainelPrincipal from "@/paginas/PainelPrincipal";
 import ListaCriancas from "@/paginas/ListaCriancas";
 import PastaCrianca from "@/paginas/PastaCrianca";
@@ -23,32 +26,48 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+const RotasInternas = () => (
+  <LayoutPrincipal>
+    <Routes>
+      <Route path="/" element={<PainelPrincipal />} />
+      <Route path="/criancas" element={<ListaCriancas />} />
+      <Route path="/criancas/:id" element={<PastaCrianca />} />
+      <Route path="/funcionarios" element={<PaginaFuncionarios />} />
+      <Route path="/sessoes" element={<PaginaSessoes />} />
+      <Route path="/programas" element={<PaginaProgramas />} />
+      <Route path="/avaliacoes" element={<PaginaAvaliacoes />} />
+      <Route path="/agenda" element={<PaginaAgenda />} />
+      <Route path="/escola" element={<PaginaEscola />} />
+      <Route path="/familia" element={<PaginaFamilia />} />
+      <Route path="/relatorios" element={<PaginaRelatorios />} />
+      <Route path="/graficos" element={<PaginaGraficos />} />
+      <Route path="/automacoes" element={<PaginaModulo />} />
+      <Route path="/configuracoes" element={<PaginaConfiguracoes />} />
+      <Route path="/logs" element={<PaginaLogs />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  </LayoutPrincipal>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <LayoutPrincipal>
+        <AuthProvider>
           <Routes>
-            <Route path="/" element={<PainelPrincipal />} />
-            <Route path="/criancas" element={<ListaCriancas />} />
-            <Route path="/criancas/:id" element={<PastaCrianca />} />
-            <Route path="/funcionarios" element={<PaginaFuncionarios />} />
-            <Route path="/sessoes" element={<PaginaSessoes />} />
-            <Route path="/programas" element={<PaginaProgramas />} />
-            <Route path="/avaliacoes" element={<PaginaAvaliacoes />} />
-            <Route path="/agenda" element={<PaginaAgenda />} />
-            <Route path="/escola" element={<PaginaEscola />} />
-            <Route path="/familia" element={<PaginaFamilia />} />
-            <Route path="/relatorios" element={<PaginaRelatorios />} />
-            <Route path="/graficos" element={<PaginaGraficos />} />
-            <Route path="/automacoes" element={<PaginaModulo />} />
-            <Route path="/configuracoes" element={<PaginaConfiguracoes />} />
-            <Route path="/logs" element={<PaginaLogs />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/auth" element={<PaginaAuth />} />
+            <Route
+              path="*"
+              element={
+                <RotaProtegida>
+                  <RotasInternas />
+                </RotaProtegida>
+              }
+            />
           </Routes>
-        </LayoutPrincipal>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

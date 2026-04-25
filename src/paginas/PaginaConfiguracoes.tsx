@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, User, Bell, Plug, Shield, Palette, Save, Trash2, KeyRound, Mail, MessageSquare, Calendar as CalendarIcon, FileSignature } from "lucide-react";
+import { Building2, User, Bell, Plug, Shield, Palette, Save, Trash2, KeyRound, Mail, MessageSquare, Calendar as CalendarIcon, FileSignature, Users } from "lucide-react";
+import { AbaUsuarios } from "@/componentes/configuracoes/AbaUsuarios";
 import { toast } from "sonner";
 
 export default function PaginaConfiguracoes() {
@@ -84,9 +85,10 @@ export default function PaginaConfiguracoes() {
       </div>
 
       <Tabs defaultValue="clinica" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
           <TabsTrigger value="clinica"><Building2 className="h-4 w-4 mr-1.5" />Clínica</TabsTrigger>
           <TabsTrigger value="perfil"><User className="h-4 w-4 mr-1.5" />Perfil</TabsTrigger>
+          <TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-1.5" />Usuários</TabsTrigger>
           <TabsTrigger value="notificacoes"><Bell className="h-4 w-4 mr-1.5" />Avisos</TabsTrigger>
           <TabsTrigger value="integracoes"><Plug className="h-4 w-4 mr-1.5" />Integrações</TabsTrigger>
           <TabsTrigger value="seguranca"><Shield className="h-4 w-4 mr-1.5" />Segurança</TabsTrigger>
@@ -199,6 +201,11 @@ export default function PaginaConfiguracoes() {
               <Button onClick={() => salvar("Perfil")}><Save className="h-4 w-4 mr-2" />Salvar perfil</Button>
             </div>
           </Card>
+        </TabsContent>
+
+        {/* USUÁRIOS */}
+        <TabsContent value="usuarios" className="pt-4">
+          <AbaUsuarios />
         </TabsContent>
 
         {/* NOTIFICAÇÕES */}
