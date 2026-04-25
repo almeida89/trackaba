@@ -15,10 +15,17 @@ import {
   Shield,
   ChevronLeft,
   Menu,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole, rotuloPapel } from "@/hooks/useUserRole";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const itensMenu = [
   { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
