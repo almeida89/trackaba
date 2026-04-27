@@ -179,11 +179,11 @@ export default function PaginaLogs() {
             Histórico completo das ações no sistema. Selecione o intervalo de datas e exporte em CSV ou PDF.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={exportarCsv} variant="outline">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <Button onClick={exportarCsv} variant="outline" className="flex-1 sm:flex-none">
             <FileSpreadsheet className="h-4 w-4 mr-2" /> Exportar CSV
           </Button>
-          <Button onClick={exportarPdf}>
+          <Button onClick={exportarPdf} className="flex-1 sm:flex-none">
             <FileText className="h-4 w-4 mr-2" /> Exportar PDF
           </Button>
         </div>
@@ -279,6 +279,7 @@ export default function PaginaLogs() {
       </Card>
 
       <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -294,7 +295,7 @@ export default function PaginaLogs() {
           <TableBody>
             {filtrados.map((l) => (
               <TableRow key={l.id} className="cursor-pointer" onClick={() => setDetalhe(l)}>
-                <TableCell className="font-mono text-xs text-muted-foreground">
+                <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                   {new Date(l.dataHora).toLocaleString("pt-BR")}
                 </TableCell>
                 <TableCell>
@@ -325,6 +326,7 @@ export default function PaginaLogs() {
             )}
           </TableBody>
         </Table>
+        </div>
       </Card>
 
       <Dialog open={!!detalhe} onOpenChange={(o) => !o && setDetalhe(null)}>
