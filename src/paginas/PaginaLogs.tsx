@@ -7,12 +7,108 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
-import { Activity, AlertTriangle, ShieldAlert, Search, Download, Eye, Filter, FileText, FileSpreadsheet } from "lucide-react";
-import { logsIniciais, rotuloAcao, rotuloCategoria, corSeveridade, type RegistroLog } from "@/componentes/logs/index";
+import { Activity, AlertTriangle, ShieldAlert, Search, Eye, Filter, FileText, FileSpreadsheet } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+type AcaoLog =
+  | "login"
+  | "logout"
+  | "criar"
+  | "editar"
+  | "excluir"
+  | "exportar"
+  | "visualizar"
+  | "falha_login"
+  | "alterar_papel"
+  | "configurar";
+
+type CategoriaLog =
+  | "autenticacao"
+  | "criancas"
+  | "sessoes"
+  | "avaliacoes"
+  | "programas"
+  | "agenda"
+  | "usuarios"
+  | "relatorios"
+  | "configuracoes"
+  | "sistema";
+
+type SeveridadeLog = "info" | "aviso" | "erro" | "critico";
+
+interface RegistroLog {
+  id: string;
+  dataHora: string;
+  usuario: string;
+  cargoUsuario: string;
+  acao: AcaoLog;
+  categoria: CategoriaLog;
+  recurso: string;
+  descricao: string;
+  ip: string;
+  dispositivo: string;
+  severidade: SeveridadeLog;
+}
+
+const rotuloAcao: Record<AcaoLog, string> = {
+  login: "Login",
+  logout: "Logout",
+  criar: "Criar",
+  editar: "Editar",
+  excluir: "Excluir",
+  exportar: "Exportar",
+  visualizar: "Visualizar",
+  falha_login: "Falha de login",
+  alterar_papel: "Alterar papel",
+  configurar: "Configurar",
+};
+
+const rotuloCategoria: Record<CategoriaLog, string> = {
+  autenticacao: "Autenticação",
+  criancas: "Crianças",
+  sessoes: "Sessões",
+  avaliacoes: "Avaliações",
+  programas: "Programas",
+  agenda: "Agenda",
+  usuarios: "Usuários",
+  relatorios: "Relatórios",
+  configuracoes: "Configurações",
+  sistema: "Sistema",
+};
+
+const corSeveridade: Record<SeveridadeLog, string> = {
+  info: "bg-status-info/15 text-status-info border-status-info/30",
+  aviso: "bg-status-warning/15 text-status-warning border-status-warning/30",
+  erro: "bg-destructive/15 text-destructive border-destructive/30",
+  critico: "bg-destructive/25 text-destructive border-destructive/50 font-semibold",
+};
+
+const dataIso = (diasAtras: number, hora = "10:30") => {
+  const d = new Date();
+  d.setDate(d.getDate() - diasAtras);
+  return `${d.toISOString().slice(0, 10)}T${hora}:00`;
+};
+
+const logsIniciais: RegistroLog[] = [
+  { id: "log-001", dataHora: dataIso(0, "09:12"), usuario: "ana.carolina@trackaba.com.br", cargoUsuario: "Administrador", acao: "login", categoria: "autenticacao", recurso: "/auth", descricao: "Login bem-sucedido", ip: "189.45.12.88", dispositivo: "Chrome / macOS", severidade: "info" },
+  { id: "log-002", dataHora: dataIso(0, "09:18"), usuario: "ana.carolina@trackaba.com.br", cargoUsuario: "Administrador", acao: "criar", categoria: "criancas", recurso: "criancas/novo", descricao: "Nova criança cadastrada: Sofia Almeida", ip: "189.45.12.88", dispositivo: "Chrome / macOS", severidade: "info" },
+  { id: "log-003", dataHora: dataIso(0, "10:02"), usuario: "carlos.lima@trackaba.com.br", cargoUsuario: "Psicólogo", acao: "criar", categoria: "sessoes", recurso: "sessoes/s-441", descricao: "Sessão registrada para Lucas Mendes", ip: "201.18.44.10", dispositivo: "Safari / iPad", severidade: "info" },
+  { id: "log-004", dataHora: dataIso(1, "14:55"), usuario: "recepcao@trackaba.com.br", cargoUsuario: "Recepcionista", acao: "editar", categoria: "agenda", recurso: "agenda/ag-220", descricao: "Agendamento remarcado: Pedro Rocha", ip: "189.45.12.88", dispositivo: "Edge / Windows", severidade: "info" },
+  { id: "log-005", dataHora: dataIso(1, "16:30"), usuario: "desconhecido", cargoUsuario: "—", acao: "falha_login", categoria: "autenticacao", recurso: "/auth", descricao: "Falha de login: credenciais inválidas (3ª tentativa)", ip: "45.230.91.7", dispositivo: "Firefox / Linux", severidade: "aviso" },
+  { id: "log-006", dataHora: dataIso(2, "08:45"), usuario: "ana.carolina@trackaba.com.br", cargoUsuario: "Administrador", acao: "alterar_papel", categoria: "usuarios", recurso: "user_roles/u-12", descricao: "Papel alterado de 'familia' para 'psicologo'", ip: "189.45.12.88", dispositivo: "Chrome / macOS", severidade: "aviso" },
+  { id: "log-007", dataHora: dataIso(2, "11:20"), usuario: "fernanda.costa@trackaba.com.br", cargoUsuario: "Coordenador", acao: "exportar", categoria: "relatorios", recurso: "relatorios/consolidado", descricao: "Relatório consolidado exportado em PDF", ip: "187.66.10.5", dispositivo: "Chrome / Windows", severidade: "info" },
+  { id: "log-008", dataHora: dataIso(3, "13:15"), usuario: "carlos.lima@trackaba.com.br", cargoUsuario: "Psicólogo", acao: "criar", categoria: "avaliacoes", recurso: "avaliacoes/av-77", descricao: "Avaliação VB-MAPP iniciada", ip: "201.18.44.10", dispositivo: "Safari / iPad", severidade: "info" },
+  { id: "log-009", dataHora: dataIso(3, "17:50"), usuario: "sistema", cargoUsuario: "Sistema", acao: "configurar", categoria: "sistema", recurso: "backup/diario", descricao: "Backup diário concluído com sucesso", ip: "127.0.0.1", dispositivo: "Servidor", severidade: "info" },
+  { id: "log-010", dataHora: dataIso(4, "09:00"), usuario: "ana.carolina@trackaba.com.br", cargoUsuario: "Administrador", acao: "configurar", categoria: "configuracoes", recurso: "seguranca/2fa", descricao: "Autenticação de dois fatores ativada", ip: "189.45.12.88", dispositivo: "Chrome / macOS", severidade: "info" },
+  { id: "log-011", dataHora: dataIso(5, "22:14"), usuario: "desconhecido", cargoUsuario: "—", acao: "falha_login", categoria: "autenticacao", recurso: "/auth", descricao: "Tentativa suspeita de acesso (IP estrangeiro)", ip: "103.45.221.9", dispositivo: "Bot / desconhecido", severidade: "critico" },
+  { id: "log-012", dataHora: dataIso(6, "10:40"), usuario: "fernanda.costa@trackaba.com.br", cargoUsuario: "Coordenador", acao: "editar", categoria: "programas", recurso: "programas/p-19", descricao: "Programa 'Comunicação Funcional' atualizado", ip: "187.66.10.5", dispositivo: "Chrome / Windows", severidade: "info" },
+  { id: "log-013", dataHora: dataIso(7, "15:25"), usuario: "ana.carolina@trackaba.com.br", cargoUsuario: "Administrador", acao: "excluir", categoria: "criancas", recurso: "criancas/c-08", descricao: "Pasta arquivada: paciente inativo há 12 meses", ip: "189.45.12.88", dispositivo: "Chrome / macOS", severidade: "aviso" },
+  { id: "log-014", dataHora: dataIso(8, "11:00"), usuario: "carlos.lima@trackaba.com.br", cargoUsuario: "Psicólogo", acao: "visualizar", categoria: "criancas", recurso: "criancas/c-01", descricao: "Pasta clínica acessada: Lucas Mendes", ip: "201.18.44.10", dispositivo: "Safari / iPad", severidade: "info" },
+  { id: "log-015", dataHora: dataIso(10, "08:30"), usuario: "sistema", cargoUsuario: "Sistema", acao: "configurar", categoria: "sistema", recurso: "manutencao/db", descricao: "Manutenção preventiva no banco de dados", ip: "127.0.0.1", dispositivo: "Servidor", severidade: "info" },
+];
 
 export default function PaginaLogs() {
   const [logs] = useState<RegistroLog[]>(logsIniciais);
