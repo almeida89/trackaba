@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
 import { Activity, AlertTriangle, ShieldAlert, Search, Download, Eye, Filter, FileText, FileSpreadsheet } from "lucide-react";
-import { logsIniciais, rotuloAcao, rotuloCategoria, corSeveridade, type RegistroLog } from "@/componentes/logs";
+import { logsIniciais, rotuloAcao, rotuloCategoria, corSeveridade, type RegistroLog } from "@/componentes/logs/index";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
