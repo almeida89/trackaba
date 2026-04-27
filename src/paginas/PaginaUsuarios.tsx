@@ -365,6 +365,7 @@ export default function PaginaUsuarios() {
               )}
             </TableBody>
           </Table>
+          </div>
         )}
       </Card>
     </div>
