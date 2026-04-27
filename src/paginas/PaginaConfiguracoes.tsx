@@ -85,7 +85,8 @@ export default function PaginaConfiguracoes() {
       </div>
 
       <Tabs defaultValue="clinica" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
+        <div className="-mx-3 sm:-mx-4 lg:mx-0 overflow-x-auto">
+        <TabsList className="inline-flex w-max lg:w-full lg:grid lg:grid-cols-7 px-3 sm:px-4 lg:px-0">
           <TabsTrigger value="clinica"><Building2 className="h-4 w-4 mr-1.5" />Clínica</TabsTrigger>
           <TabsTrigger value="perfil"><User className="h-4 w-4 mr-1.5" />Perfil</TabsTrigger>
           <TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-1.5" />Usuários</TabsTrigger>
@@ -94,6 +95,7 @@ export default function PaginaConfiguracoes() {
           <TabsTrigger value="seguranca"><Shield className="h-4 w-4 mr-1.5" />Segurança</TabsTrigger>
           <TabsTrigger value="aparencia"><Palette className="h-4 w-4 mr-1.5" />Aparência</TabsTrigger>
         </TabsList>
+        </div>
 
         {/* CLÍNICA */}
         <TabsContent value="clinica" className="pt-4">

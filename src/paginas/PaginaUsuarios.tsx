@@ -174,7 +174,7 @@ export default function PaginaUsuarios() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
@@ -279,6 +279,7 @@ export default function PaginaUsuarios() {
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
