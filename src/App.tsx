@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { RotaProtegida } from "@/componentes/RotaProtegida";
 import { RotaAdmin } from "@/componentes/RotaAdmin";
 import PaginaAuth from "@/paginas/PaginaAuth";
+import PaginaResetSenha from "@/paginas/PaginaResetSenha";
 import PaginaUsuarios from "@/paginas/PaginaUsuarios";
 import PainelPrincipal from "@/paginas/PainelPrincipal";
 import ListaCriancas from "@/paginas/ListaCriancas";
@@ -61,6 +62,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<PaginaAuth />} />
+            <Route path="/reset-password" element={<PaginaResetSenha />} />
             <Route
               path="*"
               element={
