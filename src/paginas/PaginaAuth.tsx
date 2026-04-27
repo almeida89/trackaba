@@ -1,23 +1,49 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Activity, Loader2, Mail, Lock, User, Phone } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Activity, Loader2, Mail, Lock, User, Phone, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+const emailSchema = z.string().trim().email("E-mail inválido.").max(255);
+const senhaForteSchema = z
+  .string()
+  .min(8, "A senha deve ter pelo menos 8 caracteres.")
+  .max(72, "A senha deve ter no máximo 72 caracteres.")
+  .regex(/[A-Z]/, "Inclua ao menos uma letra maiúscula.")
+  .regex(/[a-z]/, "Inclua ao menos uma letra minúscula.")
+  .regex(/[0-9]/, "Inclua ao menos um número.");
+
+const cadastroSchema = z.object({
+  nome: z.string().trim().min(3, "Informe seu nome completo.").max(120),
+  email: emailSchema,
+  telefone: z.string().trim().max(20).optional(),
+  senha: senhaForteSchema,
+});
+
 export default function PaginaAuth() {
-  const { user, carregando, entrar, cadastrar } = useAuth();
+  const { user, carregando, entrar, cadastrar, recuperarSenha, reenviarConfirmacao } = useAuth();
   const navigate = useNavigate();
 
   const [aba, setAba] = useState<"entrar" | "cadastrar">("entrar");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [emailNaoConfirmado, setEmailNaoConfirmado] = useState<string | null>(null);
 
   // Login
   const [emailLogin, setEmailLogin] = useState("");
@@ -29,9 +55,15 @@ export default function PaginaAuth() {
   const [telefone, setTelefone] = useState("");
   const [senhaCad, setSenhaCad] = useState("");
 
+  // Recuperação
+  const [recuperarAberto, setRecuperarAberto] = useState(false);
+  const [emailRecuperar, setEmailRecuperar] = useState("");
+  const [enviandoRecuperar, setEnviandoRecuperar] = useState(false);
+
   useEffect(() => {
     setErro(null);
     setInfo(null);
+    setEmailNaoConfirmado(null);
   }, [aba]);
 
   if (!carregando && user) {
@@ -42,11 +74,22 @@ export default function PaginaAuth() {
     e.preventDefault();
     setErro(null);
     setInfo(null);
+    setEmailNaoConfirmado(null);
+
+    const emailVal = emailSchema.safeParse(emailLogin);
+    if (!emailVal.success) {
+      setErro(emailVal.error.issues[0].message);
+      return;
+    }
+
     setEnviando(true);
-    const { erro: err } = await entrar(emailLogin.trim(), senhaLogin);
+    const { erro: err } = await entrar(emailVal.data, senhaLogin);
     setEnviando(false);
     if (err) {
       setErro(err);
+      if (err.toLowerCase().includes("confirme seu e-mail")) {
+        setEmailNaoConfirmado(emailVal.data);
+      }
       return;
     }
     toast.success("Bem-vindo(a) de volta!");
@@ -57,16 +100,24 @@ export default function PaginaAuth() {
     e.preventDefault();
     setErro(null);
     setInfo(null);
-    if (senhaCad.length < 6) {
-      setErro("A senha deve ter pelo menos 6 caracteres.");
+
+    const dados = cadastroSchema.safeParse({
+      nome,
+      email: emailCad,
+      telefone: telefone || undefined,
+      senha: senhaCad,
+    });
+    if (!dados.success) {
+      setErro(dados.error.issues[0].message);
       return;
     }
+
     setEnviando(true);
     const { erro: err, mensagem } = await cadastrar(
-      emailCad.trim(),
-      senhaCad,
-      nome.trim(),
-      telefone.trim() || undefined,
+      dados.data.email,
+      dados.data.senha,
+      dados.data.nome,
+      dados.data.telefone,
     );
     setEnviando(false);
     if (err) {
@@ -81,8 +132,40 @@ export default function PaginaAuth() {
     setAba("entrar");
   };
 
+  const aoRecuperar = async (e: FormEvent) => {
+    e.preventDefault();
+    const emailVal = emailSchema.safeParse(emailRecuperar);
+    if (!emailVal.success) {
+      toast.error(emailVal.error.issues[0].message);
+      return;
+    }
+    setEnviandoRecuperar(true);
+    const { erro: err, mensagem } = await recuperarSenha(emailVal.data);
+    setEnviandoRecuperar(false);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    toast.success(mensagem ?? "E-mail enviado.");
+    setRecuperarAberto(false);
+    setEmailRecuperar("");
+  };
+
+  const aoReenviarConfirmacao = async () => {
+    if (!emailNaoConfirmado) return;
+    setEnviando(true);
+    const { erro: err, mensagem } = await reenviarConfirmacao(emailNaoConfirmado);
+    setEnviando(false);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    toast.success(mensagem ?? "E-mail reenviado.");
+    setEmailNaoConfirmado(null);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground mb-4">
@@ -103,7 +186,26 @@ export default function PaginaAuth() {
 
             {erro && (
               <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{erro}</AlertDescription>
+                <AlertDescription className="space-y-2">
+                  <p>{erro}</p>
+                  {emailNaoConfirmado && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={aoReenviarConfirmacao}
+                      disabled={enviando}
+                      className="mt-1"
+                    >
+                      {enviando ? (
+                        <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                      ) : (
+                        <Mail className="h-3 w-3 mr-1.5" />
+                      )}
+                      Reenviar e-mail de confirmação
+                    </Button>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
             {info && (
@@ -131,7 +233,19 @@ export default function PaginaAuth() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="senha-login">Senha</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="senha-login">Senha</Label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmailRecuperar(emailLogin);
+                        setRecuperarAberto(true);
+                      }}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -212,13 +326,17 @@ export default function PaginaAuth() {
                       type="password"
                       autoComplete="new-password"
                       required
-                      minLength={6}
+                      minLength={8}
                       value={senhaCad}
                       onChange={(e) => setSenhaCad(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                       className="pl-9"
                     />
                   </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Use ao menos 8 caracteres com letras maiúsculas, minúsculas e números.
+                    Senhas que apareceram em vazamentos públicos são bloqueadas.
+                  </p>
                 </div>
                 <Button type="submit" className="w-full" disabled={enviando}>
                   {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar conta"}
@@ -235,6 +353,49 @@ export default function PaginaAuth() {
           © 2026 TrackABA · Todos os direitos reservados
         </p>
       </div>
+
+      <Dialog open={recuperarAberto} onOpenChange={setRecuperarAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Recuperar senha
+            </DialogTitle>
+            <DialogDescription>
+              Informe o e-mail cadastrado. Enviaremos um link seguro para você criar uma nova senha.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={aoRecuperar} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-rec">E-mail</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email-rec"
+                  type="email"
+                  required
+                  value={emailRecuperar}
+                  onChange={(e) => setEmailRecuperar(e.target.value)}
+                  placeholder="voce@exemplo.com"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setRecuperarAberto(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={enviandoRecuperar}>
+                {enviandoRecuperar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Enviar link de recuperação"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
