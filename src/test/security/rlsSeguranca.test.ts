@@ -89,31 +89,56 @@ describe("Segurança RLS — user_roles", () => {
     await bob?.client.auth.signOut();
   });
 
-  it("usuário comum NÃO consegue se auto-promover a admin", async () => {
+  // === Testes anônimos (rodam sempre, mesmo com confirmação de e-mail ativa) ===
+
+  it("anônimo (sem sessão) NÃO consegue ler user_roles", async () => {
+    const { data, error } = await anon.from("user_roles").select("*").limit(1);
+    expect(error !== null || (data?.length ?? 0) === 0).toBe(true);
+  });
+
+  it("anônimo NÃO consegue inserir em user_roles", async () => {
+    const fakeId = "00000000-0000-0000-0000-000000000001";
+    const { error } = await anon
+      .from("user_roles")
+      .insert({ user_id: fakeId, role: "admin" });
+    expect(error).not.toBeNull();
+  });
+
+  it("anônimo NÃO consegue ler profiles", async () => {
+    const { data, error } = await anon.from("profiles").select("*").limit(1);
+    expect(error !== null || (data?.length ?? 0) === 0).toBe(true);
+  });
+
+  // === Testes autenticados (exigem auto-confirm; pulam com mensagem se indisponível) ===
+
+  it("usuário comum NÃO consegue se auto-promover a admin", async (ctx) => {
+    if (!skipSe(alice)) return ctx.skip();
     const { error } = await alice.client
       .from("user_roles")
       .insert({ user_id: alice.userId, role: "admin" });
     expect(error, "INSERT em user_roles deve ser bloqueado por RLS").not.toBeNull();
   });
 
-  it("usuário comum NÃO consegue inserir papel para outro usuário", async () => {
+  it("usuário comum NÃO consegue inserir papel para outro usuário", async (ctx) => {
+    if (!skipSe(alice) || !skipSe(bob)) return ctx.skip();
     const { error } = await alice.client
       .from("user_roles")
       .insert({ user_id: bob.userId, role: "admin" });
     expect(error).not.toBeNull();
   });
 
-  it("usuário comum NÃO consegue UPDATE em user_roles", async () => {
+  it("usuário comum NÃO consegue UPDATE em user_roles", async (ctx) => {
+    if (!skipSe(alice)) return ctx.skip();
     const { data, error } = await alice.client
       .from("user_roles")
       .update({ role: "admin" })
       .eq("user_id", alice.userId)
       .select();
-    // Pode retornar erro OU array vazio (RLS filtra). Ambos são seguros.
     expect(error !== null || (data?.length ?? 0) === 0).toBe(true);
   });
 
-  it("usuário comum NÃO consegue DELETE em user_roles", async () => {
+  it("usuário comum NÃO consegue DELETE em user_roles", async (ctx) => {
+    if (!skipSe(alice)) return ctx.skip();
     const { data, error } = await alice.client
       .from("user_roles")
       .delete()
@@ -122,7 +147,8 @@ describe("Segurança RLS — user_roles", () => {
     expect(error !== null || (data?.length ?? 0) === 0).toBe(true);
   });
 
-  it("usuário comum NÃO consegue ler papel de outro usuário", async () => {
+  it("usuário comum NÃO consegue ler papel de outro usuário", async (ctx) => {
+    if (!skipSe(alice) || !skipSe(bob)) return ctx.skip();
     const { data, error } = await alice.client
       .from("user_roles")
       .select("*")
@@ -131,31 +157,20 @@ describe("Segurança RLS — user_roles", () => {
     expect(data ?? []).toHaveLength(0);
   });
 
-  it("usuário comum consegue ler APENAS o próprio papel", async () => {
+  it("usuário comum consegue ler APENAS o próprio papel", async (ctx) => {
+    if (!skipSe(alice)) return ctx.skip();
     const { data, error } = await alice.client
       .from("user_roles")
       .select("user_id, role")
       .eq("user_id", alice.userId);
     expect(error).toBeNull();
-    expect(data?.every((r) => r.user_id === alice.userId)).toBe(true);
-  });
-
-  it("anônimo (sem sessão) NÃO consegue ler user_roles", async () => {
-    const { data, error } = await anon.from("user_roles").select("*").limit(1);
-    expect(error !== null || (data?.length ?? 0) === 0).toBe(true);
-  });
-
-  it("anônimo NÃO consegue inserir em user_roles", async () => {
-    const { error } = await anon
-      .from("user_roles")
-      .insert({ user_id: alice.userId, role: "admin" });
-    expect(error).not.toBeNull();
+    expect(data?.every((r) => r.user_id === alice!.userId)).toBe(true);
   });
 });
 
 describe("Segurança RLS — profiles", () => {
-  let alice: Usuario;
-  let bob: Usuario;
+  let alice: Usuario | null = null;
+  let bob: Usuario | null = null;
 
   beforeAll(async () => {
     alice = await criarUsuario("alice-p");
@@ -167,7 +182,8 @@ describe("Segurança RLS — profiles", () => {
     await bob?.client.auth.signOut();
   });
 
-  it("usuário NÃO consegue ler perfil de outro usuário", async () => {
+  it("usuário NÃO consegue ler perfil de outro usuário", async (ctx) => {
+    if (!skipSe(alice) || !skipSe(bob)) return ctx.skip();
     const { data, error } = await alice.client
       .from("profiles")
       .select("*")
@@ -176,7 +192,8 @@ describe("Segurança RLS — profiles", () => {
     expect(data ?? []).toHaveLength(0);
   });
 
-  it("usuário NÃO consegue alterar perfil de outro usuário", async () => {
+  it("usuário NÃO consegue alterar perfil de outro usuário", async (ctx) => {
+    if (!skipSe(alice) || !skipSe(bob)) return ctx.skip();
     const { data, error } = await alice.client
       .from("profiles")
       .update({ nome_completo: "HACKEADO" })
@@ -184,7 +201,6 @@ describe("Segurança RLS — profiles", () => {
       .select();
     expect(error !== null || (data?.length ?? 0) === 0).toBe(true);
 
-    // Confirma que o perfil de Bob não foi alterado (lendo com a sessão dele).
     const { data: bobProfile } = await bob.client
       .from("profiles")
       .select("nome_completo")
@@ -193,7 +209,8 @@ describe("Segurança RLS — profiles", () => {
     expect(bobProfile?.nome_completo).not.toBe("HACKEADO");
   });
 
-  it("usuário consegue ler/atualizar o próprio perfil", async () => {
+  it("usuário consegue ler/atualizar o próprio perfil", async (ctx) => {
+    if (!skipSe(alice)) return ctx.skip();
     const novoNome = `Alice Teste ${Date.now()}`;
     const { error } = await alice.client
       .from("profiles")
@@ -209,3 +226,4 @@ describe("Segurança RLS — profiles", () => {
     expect(data?.nome_completo).toBe(novoNome);
   });
 });
+
