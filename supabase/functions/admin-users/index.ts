@@ -89,7 +89,10 @@ Deno.serve(async (req) => {
         return json({ erro: "Você não pode remover a si mesmo." }, 400);
       }
       const { error: delErr } = await admin.auth.admin.deleteUser(user_id);
-      if (delErr) return json({ erro: delErr.message }, 400);
+      if (delErr) {
+        console.error("Erro ao remover usuário:", delErr);
+        return json({ erro: "Não foi possível remover o usuário." }, 400);
+      }
       return json({ ok: true });
     }
 
