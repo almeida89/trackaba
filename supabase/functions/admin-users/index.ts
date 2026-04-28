@@ -98,7 +98,8 @@ Deno.serve(async (req) => {
 
     return json({ erro: "Ação inválida." }, 400);
   } catch (e) {
-    return json({ erro: (e as Error).message }, 500);
+    console.error("Erro não tratado em admin-users:", e);
+    return json({ erro: "Erro interno. Tente novamente." }, 500);
   }
 });
 
