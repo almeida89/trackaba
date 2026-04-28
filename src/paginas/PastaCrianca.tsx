@@ -89,19 +89,33 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
   );
 }
 
+type CriancaState = {
+  nome?: string;
+  idade?: number;
+  diagnostico?: string;
+  status?: string;
+};
+
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
+  const localizacao = useLocation();
+  const criancaState = (localizacao.state as { crianca?: CriancaState } | null)?.crianca;
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
+
+  const nome = criancaState?.nome ?? "Lucas Mendes";
+  const idade = criancaState?.idade ?? 5;
+  const diagnostico = criancaState?.diagnostico ?? "TEA Nível 1";
+  const status = criancaState?.status ?? "Ativo";
 
   const renderizarConteudo = () => {
     switch (abaAtiva) {
       case "cadastro":
         return <ConteudoCadastro />;
       case "programas":
-        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
+        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome={nome} />;
       case "sessoes":
-        return <SessoesCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
+        return <SessoesCrianca criancaId={id ?? "1"} criancaNome={nome} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
