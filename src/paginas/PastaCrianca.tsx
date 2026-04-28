@@ -133,14 +133,14 @@ export default function PastaCrianca() {
         </button>
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
-            Lucas Mendes
+            {nome}
           </h1>
           <p className="text-sm text-muted-foreground">
-            5 anos • TEA Nível 1 • Pasta #{id}
+            {idade} anos • {diagnostico} • Pasta #{id}
           </p>
         </div>
         <Badge className="ml-auto bg-status-success/15 text-status-success border-status-success/30">
-          Ativo
+          {status}
         </Badge>
       </div>
 
