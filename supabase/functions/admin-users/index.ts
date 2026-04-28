@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
         user_metadata: { nome_completo, telefone: telefone ?? null },
       });
       if (criarErr || !criado.user) {
-        return json({ erro: criarErr?.message ?? "Não foi possível criar o usuário." }, 400);
+        console.error("Erro ao criar usuário:", criarErr);
+        return json({ erro: "Não foi possível criar o usuário." }, 400);
       }
 
       // Trigger handle_new_user já criou profile e papel 'familia'. Ajustar papel se diferente.
@@ -88,13 +89,17 @@ Deno.serve(async (req) => {
         return json({ erro: "Você não pode remover a si mesmo." }, 400);
       }
       const { error: delErr } = await admin.auth.admin.deleteUser(user_id);
-      if (delErr) return json({ erro: delErr.message }, 400);
+      if (delErr) {
+        console.error("Erro ao remover usuário:", delErr);
+        return json({ erro: "Não foi possível remover o usuário." }, 400);
+      }
       return json({ ok: true });
     }
 
     return json({ erro: "Ação inválida." }, 400);
   } catch (e) {
-    return json({ erro: (e as Error).message }, 500);
+    console.error("Erro não tratado em admin-users:", e);
+    return json({ erro: "Erro interno. Tente novamente." }, 500);
   }
 });
 
