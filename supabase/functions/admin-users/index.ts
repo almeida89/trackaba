@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
         user_metadata: { nome_completo, telefone: telefone ?? null },
       });
       if (criarErr || !criado.user) {
-        return json({ erro: criarErr?.message ?? "Não foi possível criar o usuário." }, 400);
+        console.error("Erro ao criar usuário:", criarErr);
+        return json({ erro: "Não foi possível criar o usuário." }, 400);
       }
 
       // Trigger handle_new_user já criou profile e papel 'familia'. Ajustar papel se diferente.
