@@ -244,7 +244,7 @@ export default function ListaCriancas() {
           {criancasFiltradas.map((crianca) => (
             <button
               key={crianca.id}
-              onClick={() => navegar(`/criancas/${crianca.id}`)}
+              onClick={() => navegar(`/criancas/${crianca.id}`, { state: { crianca } })}
               className="rounded-xl border border-border bg-card p-5 text-left hover:shadow-md hover:border-primary/30 transition-all group"
             >
               <div className="flex items-start gap-3">

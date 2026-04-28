@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   User,
@@ -89,19 +89,33 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
   );
 }
 
+type CriancaState = {
+  nome?: string;
+  idade?: number;
+  diagnostico?: string;
+  status?: string;
+};
+
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
+  const localizacao = useLocation();
+  const criancaState = (localizacao.state as { crianca?: CriancaState } | null)?.crianca;
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
+
+  const nome = criancaState?.nome ?? "Lucas Mendes";
+  const idade = criancaState?.idade ?? 5;
+  const diagnostico = criancaState?.diagnostico ?? "TEA Nível 1";
+  const status = criancaState?.status ?? "Ativo";
 
   const renderizarConteudo = () => {
     switch (abaAtiva) {
       case "cadastro":
         return <ConteudoCadastro />;
       case "programas":
-        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
+        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome={nome} />;
       case "sessoes":
-        return <SessoesCrianca criancaId={id ?? "1"} criancaNome="Lucas Mendes" />;
+        return <SessoesCrianca criancaId={id ?? "1"} criancaNome={nome} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
@@ -119,14 +133,14 @@ export default function PastaCrianca() {
         </button>
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
-            Lucas Mendes
+            {nome}
           </h1>
           <p className="text-sm text-muted-foreground">
-            5 anos • TEA Nível 1 • Pasta #{id}
+            {idade} anos • {diagnostico} • Pasta #{id}
           </p>
         </div>
         <Badge className="ml-auto bg-status-success/15 text-status-success border-status-success/30">
-          Ativo
+          {status}
         </Badge>
       </div>
 
