@@ -263,11 +263,6 @@ export default function PaginaAuth() {
                 <Button type="submit" className="w-full" disabled={enviando}>
                   {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
                 </Button>
-                <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3 leading-relaxed">
-                  <p className="font-medium text-foreground mb-1">Conta de teste (admin)</p>
-                  <p>E-mail: <span className="font-mono">admin@clinica.com</span></p>
-                  <p>Senha: <span className="font-mono">Admin@2025</span></p>
-                </div>
               </form>
             </TabsContent>
 
