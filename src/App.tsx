@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RotaProtegida } from "@/componentes/RotaProtegida";
+import { RotaEquipe } from "@/componentes/RotaEquipe";
 import { RotaAdmin } from "@/componentes/RotaAdmin";
 import PaginaAuth from "@/paginas/PaginaAuth";
 import PaginaResetSenha from "@/paginas/PaginaResetSenha";
@@ -25,6 +26,8 @@ import PaginaRelatorios from "@/paginas/PaginaRelatorios";
 import PaginaAvaliacoes from "@/paginas/PaginaAvaliacoes";
 import PaginaConfiguracoes from "@/paginas/PaginaConfiguracoes";
 import PaginaLogs from "@/paginas/PaginaLogs";
+import PaginaPortalFamilia from "@/paginas/PaginaPortalFamilia";
+import PaginaVisaoEscolaPublica from "@/paginas/PaginaVisaoEscolaPublica";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -61,13 +64,29 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
+            {/* Rotas públicas */}
             <Route path="/auth" element={<PaginaAuth />} />
             <Route path="/reset-password" element={<PaginaResetSenha />} />
+            <Route path="/escola/visao/:token" element={<PaginaVisaoEscolaPublica />} />
+
+            {/* Portal família (logado, role família) */}
+            <Route
+              path="/familia/portal"
+              element={
+                <RotaProtegida>
+                  <PaginaPortalFamilia />
+                </RotaProtegida>
+              }
+            />
+
+            {/* Rotas internas (equipe — admins/psicólogos/etc) */}
             <Route
               path="*"
               element={
                 <RotaProtegida>
-                  <RotasInternas />
+                  <RotaEquipe>
+                    <RotasInternas />
+                  </RotaEquipe>
                 </RotaProtegida>
               }
             />
