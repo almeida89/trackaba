@@ -46,11 +46,32 @@ const formatarRelativo = (iso?: string) => {
 };
 
 export default function PaginaEscola() {
-  const [acessos, setAcessos] = useState<AcessoEscola[]>(ACESSOS_ESCOLA_INICIAIS);
+  const [acessos, setAcessos] = useState<AcessoEscola[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<StatusAcessoEscola | "todos">("todos");
   const [dialogoAberto, setDialogoAberto] = useState(false);
   const [acessoSelecionadoId, setAcessoSelecionadoId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("acessos_escola")
+        .select("*")
+        .order("criado_em", { ascending: false });
+      if (!ativo) return;
+      if (error) {
+        toast.error("Não foi possível carregar os acessos");
+      } else {
+        setAcessos((data ?? []).map(mapearLinhaParaAcesso));
+      }
+      setCarregando(false);
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const acessoSelecionado = useMemo(
     () => acessos.find((a) => a.id === acessoSelecionadoId) ?? null,
@@ -86,21 +107,36 @@ export default function PaginaEscola() {
     toast.success(`Convite enviado para ${novo.escolaNome}`);
   };
 
-  const revogar = (id: string) => {
+  const revogar = async (id: string) => {
+    const { error } = await supabase
+      .from("acessos_escola")
+      .update({ status: "revogado" })
+      .eq("id", id);
+    if (error) {
+      toast.error("Não foi possível revogar o acesso");
+      return;
+    }
     setAcessos((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "revogado" } : a))
     );
     toast.success("Acesso revogado");
   };
 
-  const renovar = (id: string) => {
+  const renovar = async (id: string) => {
+    const novaExpira = new Date();
+    novaExpira.setDate(novaExpira.getDate() + 90);
+    const { error } = await supabase
+      .from("acessos_escola")
+      .update({ status: "ativo", expira_em: novaExpira.toISOString() })
+      .eq("id", id);
+    if (error) {
+      toast.error("Não foi possível renovar o acesso");
+      return;
+    }
     setAcessos((prev) =>
-      prev.map((a) => {
-        if (a.id !== id) return a;
-        const novaExpira = new Date();
-        novaExpira.setDate(novaExpira.getDate() + 90);
-        return { ...a, status: "ativo", expiraEm: novaExpira.toISOString() };
-      })
+      prev.map((a) =>
+        a.id === id ? { ...a, status: "ativo", expiraEm: novaExpira.toISOString() } : a
+      )
     );
     toast.success("Acesso renovado por mais 90 dias");
   };
