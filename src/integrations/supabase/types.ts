@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      acessos_escola: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          crianca_id: string
+          crianca_nome: string
+          email: string
+          escola_nome: string
+          expira_em: string
+          id: string
+          observacao: string | null
+          responsavel_cargo: string
+          responsavel_nome: string
+          status: Database["public"]["Enums"]["status_acesso_escola"]
+          telefone: string | null
+          token_convite: string
+          ultimo_acesso: string | null
+          ver_evolucao: boolean
+          ver_incidentes: boolean
+          ver_programas: boolean
+          ver_relatorios: boolean
+          ver_sessoes: boolean
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id: string
+          crianca_nome: string
+          email: string
+          escola_nome: string
+          expira_em: string
+          id?: string
+          observacao?: string | null
+          responsavel_cargo: string
+          responsavel_nome: string
+          status?: Database["public"]["Enums"]["status_acesso_escola"]
+          telefone?: string | null
+          token_convite?: string
+          ultimo_acesso?: string | null
+          ver_evolucao?: boolean
+          ver_incidentes?: boolean
+          ver_programas?: boolean
+          ver_relatorios?: boolean
+          ver_sessoes?: boolean
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id?: string
+          crianca_nome?: string
+          email?: string
+          escola_nome?: string
+          expira_em?: string
+          id?: string
+          observacao?: string | null
+          responsavel_cargo?: string
+          responsavel_nome?: string
+          status?: Database["public"]["Enums"]["status_acesso_escola"]
+          telefone?: string | null
+          token_convite?: string
+          ultimo_acesso?: string | null
+          ver_evolucao?: boolean
+          ver_incidentes?: boolean
+          ver_programas?: boolean
+          ver_relatorios?: boolean
+          ver_sessoes?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           atualizado_em: string
@@ -82,6 +154,7 @@ export type Database = {
         | "coordenador"
         | "recepcionista"
         | "familia"
+      status_acesso_escola: "ativo" | "pendente" | "expirado" | "revogado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -216,6 +289,7 @@ export const Constants = {
         "recepcionista",
         "familia",
       ],
+      status_acesso_escola: ["ativo", "pendente", "expirado", "revogado"],
     },
   },
 } as const

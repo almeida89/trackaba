@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,8 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { CRIANCAS_DISPONIVEIS } from "@/componentes/sessoes/dadosSessoes";
 import { AcessoEscola } from "./tiposEscola";
+import { supabase } from "@/integrations/supabase/client";
+import { mapearLinhaParaAcesso } from "./mapearAcessoEscola";
 
 interface Props {
   aberto: boolean;
@@ -65,29 +68,48 @@ export function DialogoConvidarEscola({ aberto, aoFechar, aoCriar }: Props) {
     });
   };
 
-  const enviar = () => {
+  const [salvando, setSalvando] = useState(false);
+
+  const enviar = async () => {
     const crianca = CRIANCAS_DISPONIVEIS.find((c) => c.id === criancaId);
     if (!crianca || !escolaNome || !email || !responsavelNome) return;
-    const agora = new Date();
-    const expira = new Date(agora);
+    setSalvando(true);
+    const expira = new Date();
     expira.setDate(expira.getDate() + Number(validadeDias));
 
-    const novo: AcessoEscola = {
-      id: `ae-${Date.now()}`,
-      criancaId: crianca.id,
-      criancaNome: crianca.nome,
-      escolaNome,
-      responsavelNome,
-      responsavelCargo: responsavelCargo || "Responsável pedagógico",
-      email,
-      telefone: telefone || undefined,
-      status: "pendente",
-      criadoEm: agora.toISOString(),
-      expiraEm: expira.toISOString(),
-      permissoes,
-      observacao: observacao || undefined,
-    };
-    aoCriar(novo);
+    // Gera UUID determinístico a partir do id mock para casar com o esquema do banco
+    const criancaUuid = /^[0-9a-f-]{36}$/i.test(crianca.id)
+      ? crianca.id
+      : crypto.randomUUID();
+
+    const { data, error } = await supabase
+      .from("acessos_escola")
+      .insert({
+        crianca_id: criancaUuid,
+        crianca_nome: crianca.nome,
+        escola_nome: escolaNome,
+        responsavel_nome: responsavelNome,
+        responsavel_cargo: responsavelCargo || "Responsável pedagógico",
+        email,
+        telefone: telefone || null,
+        status: "pendente",
+        expira_em: expira.toISOString(),
+        ver_sessoes: permissoes.verSessoes,
+        ver_evolucao: permissoes.verEvolucao,
+        ver_programas: permissoes.verProgramas,
+        ver_relatorios: permissoes.verRelatorios,
+        ver_incidentes: permissoes.verIncidentes,
+        observacao: observacao || null,
+      })
+      .select()
+      .single();
+
+    setSalvando(false);
+    if (error || !data) {
+      toast.error("Não foi possível criar o convite");
+      return;
+    }
+    aoCriar(mapearLinhaParaAcesso(data));
     reset();
     aoFechar();
   };
@@ -229,10 +251,10 @@ export function DialogoConvidarEscola({ aberto, aoFechar, aoCriar }: Props) {
           </Button>
           <Button
             onClick={enviar}
-            disabled={!criancaId || !escolaNome || !email || !responsavelNome}
+            disabled={salvando || !criancaId || !escolaNome || !email || !responsavelNome}
             className="gap-2"
           >
-            <Mail className="h-4 w-4" /> Enviar convite
+            <Mail className="h-4 w-4" /> {salvando ? "Enviando..." : "Enviar convite"}
           </Button>
         </DialogFooter>
       </DialogContent>

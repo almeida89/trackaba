@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   GraduationCap,
   Plus,
@@ -9,6 +9,7 @@ import {
   Copy,
   XCircle,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,13 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ACESSOS_ESCOLA_INICIAIS,
   CORES_STATUS_ACESSO,
   ROTULOS_STATUS_ACESSO,
 } from "@/componentes/escola/dadosEscola";
 import { AcessoEscola, StatusAcessoEscola } from "@/componentes/escola/tiposEscola";
 import { DialogoConvidarEscola } from "@/componentes/escola/DialogoConvidarEscola";
 import { VisaoEscolar } from "@/componentes/escola/VisaoEscolar";
+import { supabase } from "@/integrations/supabase/client";
+import { mapearLinhaParaAcesso } from "@/componentes/escola/mapearAcessoEscola";
 
 const formatarData = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -44,11 +46,32 @@ const formatarRelativo = (iso?: string) => {
 };
 
 export default function PaginaEscola() {
-  const [acessos, setAcessos] = useState<AcessoEscola[]>(ACESSOS_ESCOLA_INICIAIS);
+  const [acessos, setAcessos] = useState<AcessoEscola[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<StatusAcessoEscola | "todos">("todos");
   const [dialogoAberto, setDialogoAberto] = useState(false);
   const [acessoSelecionadoId, setAcessoSelecionadoId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("acessos_escola")
+        .select("*")
+        .order("criado_em", { ascending: false });
+      if (!ativo) return;
+      if (error) {
+        toast.error("Não foi possível carregar os acessos");
+      } else {
+        setAcessos((data ?? []).map(mapearLinhaParaAcesso));
+      }
+      setCarregando(false);
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const acessoSelecionado = useMemo(
     () => acessos.find((a) => a.id === acessoSelecionadoId) ?? null,
@@ -84,21 +107,36 @@ export default function PaginaEscola() {
     toast.success(`Convite enviado para ${novo.escolaNome}`);
   };
 
-  const revogar = (id: string) => {
+  const revogar = async (id: string) => {
+    const { error } = await supabase
+      .from("acessos_escola")
+      .update({ status: "revogado" })
+      .eq("id", id);
+    if (error) {
+      toast.error("Não foi possível revogar o acesso");
+      return;
+    }
     setAcessos((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "revogado" } : a))
     );
     toast.success("Acesso revogado");
   };
 
-  const renovar = (id: string) => {
+  const renovar = async (id: string) => {
+    const novaExpira = new Date();
+    novaExpira.setDate(novaExpira.getDate() + 90);
+    const { error } = await supabase
+      .from("acessos_escola")
+      .update({ status: "ativo", expira_em: novaExpira.toISOString() })
+      .eq("id", id);
+    if (error) {
+      toast.error("Não foi possível renovar o acesso");
+      return;
+    }
     setAcessos((prev) =>
-      prev.map((a) => {
-        if (a.id !== id) return a;
-        const novaExpira = new Date();
-        novaExpira.setDate(novaExpira.getDate() + 90);
-        return { ...a, status: "ativo", expiraEm: novaExpira.toISOString() };
-      })
+      prev.map((a) =>
+        a.id === id ? { ...a, status: "ativo", expiraEm: novaExpira.toISOString() } : a
+      )
     );
     toast.success("Acesso renovado por mais 90 dias");
   };
@@ -196,7 +234,12 @@ export default function PaginaEscola() {
       </div>
 
       {/* Lista */}
-      {filtrados.length === 0 ? (
+      {carregando ? (
+        <Card className="p-12 text-center border-dashed">
+          <Loader2 className="h-8 w-8 mx-auto text-muted-foreground animate-spin" />
+          <p className="text-sm text-muted-foreground mt-3">Carregando acessos...</p>
+        </Card>
+      ) : filtrados.length === 0 ? (
         <Card className="p-12 text-center border-dashed">
           <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
           <p className="text-foreground font-medium">Nenhum acesso encontrado</p>
