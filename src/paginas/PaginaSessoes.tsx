@@ -118,7 +118,7 @@ export default function PaginaSessoes() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas crianças</SelectItem>
-                {CRIANCAS_DISPONIVEIS.map((c) => (
+                {criancasDisponiveis.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                 ))}
               </SelectContent>
