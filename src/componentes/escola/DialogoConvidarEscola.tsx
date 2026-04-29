@@ -251,10 +251,10 @@ export function DialogoConvidarEscola({ aberto, aoFechar, aoCriar }: Props) {
           </Button>
           <Button
             onClick={enviar}
-            disabled={!criancaId || !escolaNome || !email || !responsavelNome}
+            disabled={salvando || !criancaId || !escolaNome || !email || !responsavelNome}
             className="gap-2"
           >
-            <Mail className="h-4 w-4" /> Enviar convite
+            <Mail className="h-4 w-4" /> {salvando ? "Enviando..." : "Enviar convite"}
           </Button>
         </DialogFooter>
       </DialogContent>
