@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   GraduationCap,
   Plus,
@@ -9,6 +9,7 @@ import {
   Copy,
   XCircle,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,13 +24,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ACESSOS_ESCOLA_INICIAIS,
   CORES_STATUS_ACESSO,
   ROTULOS_STATUS_ACESSO,
 } from "@/componentes/escola/dadosEscola";
 import { AcessoEscola, StatusAcessoEscola } from "@/componentes/escola/tiposEscola";
 import { DialogoConvidarEscola } from "@/componentes/escola/DialogoConvidarEscola";
 import { VisaoEscolar } from "@/componentes/escola/VisaoEscolar";
+import { supabase } from "@/integrations/supabase/client";
+import { mapearLinhaParaAcesso } from "@/componentes/escola/mapearAcessoEscola";
 
 const formatarData = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
