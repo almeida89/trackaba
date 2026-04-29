@@ -234,7 +234,12 @@ export default function PaginaEscola() {
       </div>
 
       {/* Lista */}
-      {filtrados.length === 0 ? (
+      {carregando ? (
+        <Card className="p-12 text-center border-dashed">
+          <Loader2 className="h-8 w-8 mx-auto text-muted-foreground animate-spin" />
+          <p className="text-sm text-muted-foreground mt-3">Carregando acessos...</p>
+        </Card>
+      ) : filtrados.length === 0 ? (
         <Card className="p-12 text-center border-dashed">
           <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
           <p className="text-foreground font-medium">Nenhum acesso encontrado</p>
