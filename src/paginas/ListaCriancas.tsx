@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Filter, Baby, X } from "lucide-react";
+import { Search, Plus, Filter, Baby, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,25 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-
-type Crianca = {
-  id: string;
-  nome: string;
-  idade: number;
-  diagnostico: string;
-  status: string;
-  profissional: string;
-  ultimaSessao: string;
-};
-
-const criancasIniciais: Crianca[] = [
-  { id: "1", nome: "Lucas Mendes", idade: 5, diagnostico: "TEA Nível 1", status: "Ativo", profissional: "Dra. Ana Souza", ultimaSessao: "15/04/2026" },
-  { id: "2", nome: "Maria Silva", idade: 7, diagnostico: "TEA Nível 2", status: "Ativo", profissional: "Dr. Carlos Lima", ultimaSessao: "14/04/2026" },
-  { id: "3", nome: "Pedro Rocha", idade: 4, diagnostico: "TEA Nível 1", status: "Ativo", profissional: "Dra. Ana Souza", ultimaSessao: "15/04/2026" },
-  { id: "4", nome: "Julia Santos", idade: 6, diagnostico: "TDAH", status: "Em Avaliação", profissional: "Dr. Paulo Dias", ultimaSessao: "12/04/2026" },
-  { id: "5", nome: "Gabriel Oliveira", idade: 8, diagnostico: "TEA Nível 2", status: "Ativo", profissional: "Dra. Fernanda Costa", ultimaSessao: "15/04/2026" },
-  { id: "6", nome: "Sofia Almeida", idade: 3, diagnostico: "Atraso no Desenvolvimento", status: "Novo", profissional: "Dra. Ana Souza", ultimaSessao: "—" },
-];
+import { useCriancas } from "@/hooks/useCriancas";
 
 const coresStatus: Record<string, string> = {
   Ativo: "bg-status-success/15 text-status-success border-status-success/30",
@@ -54,28 +36,28 @@ const coresStatus: Record<string, string> = {
 };
 
 const statusDisponiveis = ["Ativo", "Em Avaliação", "Novo"];
-const profissionaisDisponiveis = [
-  "Dra. Ana Souza",
-  "Dr. Carlos Lima",
-  "Dr. Paulo Dias",
-  "Dra. Fernanda Costa",
-];
 
 export default function ListaCriancas() {
   const navegar = useNavigate();
-  const [criancas, setCriancas] = useState<Crianca[]>(criancasIniciais);
+  const { criancas, carregando, criar } = useCriancas();
   const [busca, setBusca] = useState("");
   const [statusSelecionados, setStatusSelecionados] = useState<string[]>([]);
   const [profissionalFiltro, setProfissionalFiltro] = useState<string>("todos");
 
   const [dialogoAberto, setDialogoAberto] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   const [novaCrianca, setNovaCrianca] = useState({
     nome: "",
-    idade: "",
+    data_nascimento: "",
     diagnostico: "",
-    status: "Novo",
-    profissional: profissionaisDisponiveis[0],
+    responsavel_principal: "",
   });
+
+  const profissionaisDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    criancas.forEach((c) => c.profissional && c.profissional !== "—" && set.add(c.profissional));
+    return Array.from(set);
+  }, [criancas]);
 
   const criancasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -108,35 +90,23 @@ export default function ListaCriancas() {
     setBusca("");
   };
 
-  const salvarNovaCrianca = () => {
-    if (!novaCrianca.nome.trim() || !novaCrianca.idade || !novaCrianca.diagnostico.trim()) {
-      toast.error("Preencha nome, idade e diagnóstico.");
+  const salvarNovaCrianca = async () => {
+    if (!novaCrianca.nome.trim() || !novaCrianca.data_nascimento || !novaCrianca.diagnostico.trim()) {
+      toast.error("Preencha nome, data de nascimento e diagnóstico.");
       return;
     }
-    const idade = Number(novaCrianca.idade);
-    if (!Number.isFinite(idade) || idade <= 0 || idade > 25) {
-      toast.error("Idade inválida.");
-      return;
-    }
-    const nova: Crianca = {
-      id: String(Date.now()),
+    setSalvando(true);
+    const ok = await criar({
       nome: novaCrianca.nome.trim(),
-      idade,
+      data_nascimento: novaCrianca.data_nascimento,
       diagnostico: novaCrianca.diagnostico.trim(),
-      status: novaCrianca.status,
-      profissional: novaCrianca.profissional,
-      ultimaSessao: "—",
-    };
-    setCriancas((prev) => [nova, ...prev]);
-    toast.success(`${nova.nome} cadastrada com sucesso.`);
-    setDialogoAberto(false);
-    setNovaCrianca({
-      nome: "",
-      idade: "",
-      diagnostico: "",
-      status: "Novo",
-      profissional: profissionaisDisponiveis[0],
+      responsavel_principal: novaCrianca.responsavel_principal.trim() || undefined,
     });
+    setSalvando(false);
+    if (ok) {
+      setDialogoAberto(false);
+      setNovaCrianca({ nome: "", data_nascimento: "", diagnostico: "", responsavel_principal: "" });
+    }
   };
 
   return (
@@ -157,7 +127,6 @@ export default function ListaCriancas() {
         </Button>
       </div>
 
-      {/* Search & filter */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -195,34 +164,28 @@ export default function ListaCriancas() {
                 ))}
               </div>
             </div>
-            <div>
-              <Label className="text-xs uppercase text-muted-foreground">
-                Profissional
-              </Label>
-              <Select
-                value={profissionalFiltro}
-                onValueChange={setProfissionalFiltro}
-              >
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  {profissionaisDisponiveis.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {profissionaisDisponiveis.length > 0 && (
+              <div>
+                <Label className="text-xs uppercase text-muted-foreground">
+                  Profissional
+                </Label>
+                <Select value={profissionalFiltro} onValueChange={setProfissionalFiltro}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {profissionaisDisponiveis.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {(filtrosAtivos > 0 || busca) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={limparFiltros}
-                className="w-full gap-2"
-              >
+              <Button variant="ghost" size="sm" onClick={limparFiltros} className="w-full gap-2">
                 <X className="h-3.5 w-3.5" /> Limpar filtros
               </Button>
             )}
@@ -230,14 +193,23 @@ export default function ListaCriancas() {
         </Popover>
       </div>
 
-      {/* Grid */}
-      {criancasFiltradas.length === 0 ? (
+      {carregando ? (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      ) : criancasFiltradas.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Baby className="h-10 w-10 mb-3 opacity-40" />
-          <p className="text-sm">Nenhuma criança encontrada com esses filtros.</p>
-          <Button variant="link" onClick={limparFiltros}>
-            Limpar filtros
-          </Button>
+          <p className="text-sm">
+            {criancas.length === 0
+              ? "Nenhuma criança cadastrada ainda."
+              : "Nenhuma criança encontrada com esses filtros."}
+          </p>
+          {criancas.length > 0 && (
+            <Button variant="link" onClick={limparFiltros}>
+              Limpar filtros
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -256,10 +228,7 @@ export default function ListaCriancas() {
                     <h3 className="font-heading font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                       {crianca.nome}
                     </h3>
-                    <Badge
-                      variant="outline"
-                      className={coresStatus[crianca.status] || ""}
-                    >
+                    <Badge variant="outline" className={coresStatus[crianca.status] || ""}>
                       {crianca.status}
                     </Badge>
                   </div>
@@ -277,14 +246,11 @@ export default function ListaCriancas() {
         </div>
       )}
 
-      {/* Dialog Nova Criança */}
       <Dialog open={dialogoAberto} onOpenChange={setDialogoAberto}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nova Criança</DialogTitle>
-            <DialogDescription>
-              Cadastre uma nova criança no sistema.
-            </DialogDescription>
+            <DialogDescription>Cadastre uma nova criança no sistema.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -292,46 +258,20 @@ export default function ListaCriancas() {
               <Input
                 id="nome"
                 value={novaCrianca.nome}
-                onChange={(e) =>
-                  setNovaCrianca({ ...novaCrianca, nome: e.target.value })
-                }
+                onChange={(e) => setNovaCrianca({ ...novaCrianca, nome: e.target.value })}
                 placeholder="Ex: João da Silva"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="idade">Idade</Label>
-                <Input
-                  id="idade"
-                  type="number"
-                  min={1}
-                  max={25}
-                  value={novaCrianca.idade}
-                  onChange={(e) =>
-                    setNovaCrianca({ ...novaCrianca, idade: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select
-                  value={novaCrianca.status}
-                  onValueChange={(v) =>
-                    setNovaCrianca({ ...novaCrianca, status: v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusDisponiveis.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="dn">Data de nascimento</Label>
+              <Input
+                id="dn"
+                type="date"
+                value={novaCrianca.data_nascimento}
+                onChange={(e) =>
+                  setNovaCrianca({ ...novaCrianca, data_nascimento: e.target.value })
+                }
+              />
             </div>
             <div>
               <Label htmlFor="diagnostico">Diagnóstico</Label>
@@ -345,31 +285,25 @@ export default function ListaCriancas() {
               />
             </div>
             <div>
-              <Label>Profissional responsável</Label>
-              <Select
-                value={novaCrianca.profissional}
-                onValueChange={(v) =>
-                  setNovaCrianca({ ...novaCrianca, profissional: v })
+              <Label htmlFor="resp">Responsável principal</Label>
+              <Input
+                id="resp"
+                value={novaCrianca.responsavel_principal}
+                onChange={(e) =>
+                  setNovaCrianca({ ...novaCrianca, responsavel_principal: e.target.value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {profissionaisDisponiveis.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Ex: Maria da Silva"
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogoAberto(false)}>
+            <Button variant="outline" onClick={() => setDialogoAberto(false)} disabled={salvando}>
               Cancelar
             </Button>
-            <Button onClick={salvarNovaCrianca}>Cadastrar</Button>
+            <Button onClick={salvarNovaCrianca} disabled={salvando}>
+              {salvando && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Cadastrar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

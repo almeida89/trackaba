@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ClipboardList, Plus, Search, Calendar as CalendarIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ClipboardList, Plus, Search, Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,16 +8,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CartaoSessao } from "@/componentes/sessoes/CartaoSessao";
 import { DetalhesSessao } from "@/componentes/sessoes/DetalhesSessao";
 import { DialogoNovaSessao } from "@/componentes/sessoes/DialogoNovaSessao";
-import { CRIANCAS_DISPONIVEIS, SESSOES_INICIAIS } from "@/componentes/sessoes/dadosSessoes";
 import { Sessao } from "@/componentes/sessoes/tiposSessoes";
+import { useSessoesBanco } from "@/hooks/useSessoesBanco";
 
 export default function PaginaSessoes() {
-  const [sessoes, setSessoes] = useState<Sessao[]>(SESSOES_INICIAIS);
-  const [selecionadaId, setSelecionadaId] = useState<string>(SESSOES_INICIAIS[0]?.id ?? "");
+  const { sessoes: sessoesBanco, carregando } = useSessoesBanco();
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [selecionadaId, setSelecionadaId] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [filtroCrianca, setFiltroCrianca] = useState("todas");
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [dialogoAberto, setDialogoAberto] = useState(false);
+
+  useEffect(() => {
+    setSessoes(sessoesBanco);
+    if (sessoesBanco.length > 0 && !selecionadaId) {
+      setSelecionadaId(sessoesBanco[0].id);
+    }
+  }, [sessoesBanco, selecionadaId]);
+
+  const criancasDisponiveis = useMemo(() => {
+    const map = new Map<string, string>();
+    sessoesBanco.forEach((s) => map.set(s.criancaId, s.criancaNome));
+    return Array.from(map, ([id, nome]) => ({ id, nome }));
+  }, [sessoesBanco]);
 
   const sessoesFiltradas = useMemo(() => {
     return sessoes
@@ -104,7 +118,7 @@ export default function PaginaSessoes() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas crianças</SelectItem>
-                {CRIANCAS_DISPONIVEIS.map((c) => (
+                {criancasDisponiveis.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
                 ))}
               </SelectContent>
@@ -123,7 +137,11 @@ export default function PaginaSessoes() {
           </div>
 
           <div className="space-y-2 max-h-[calc(100vh-22rem)] overflow-y-auto pr-1">
-            {sessoesFiltradas.length === 0 ? (
+            {carregando ? (
+              <Card className="p-8 text-center border-dashed">
+                <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
+              </Card>
+            ) : sessoesFiltradas.length === 0 ? (
               <Card className="p-8 text-center border-dashed">
                 <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Nenhuma sessão encontrada.</p>

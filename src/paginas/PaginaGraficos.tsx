@@ -1,36 +1,47 @@
-import { useMemo, useState } from "react";
-import { BarChart3, TrendingUp, Target, Activity, Award } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BarChart3, TrendingUp, Target, Activity, Award, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CRIANCAS_GRAFICOS, NIVEIS_DESEMPENHO } from "@/componentes/graficos/dadosGraficos";
+import { NIVEIS_DESEMPENHO } from "@/componentes/graficos/dadosGraficos";
 import { GraficoEvolucao } from "@/componentes/graficos/GraficoEvolucao";
 import { GraficoAcertos } from "@/componentes/graficos/GraficoAcertos";
 import { GraficoDistribuicao } from "@/componentes/graficos/GraficoDistribuicao";
+import { useGraficosBanco } from "@/hooks/useGraficosBanco";
 
 export default function PaginaGraficos() {
-  const [criancaId, setCriancaId] = useState(CRIANCAS_GRAFICOS[0].id);
-  const [programaId, setProgramaId] = useState(CRIANCAS_GRAFICOS[0].programas[0].id);
+  const { criancas: CRIANCAS_GRAFICOS, carregando } = useGraficosBanco();
+  const [criancaId, setCriancaId] = useState<string>("");
+  const [programaId, setProgramaId] = useState<string>("");
+
+  useEffect(() => {
+    if (CRIANCAS_GRAFICOS.length && !criancaId) {
+      setCriancaId(CRIANCAS_GRAFICOS[0].id);
+      setProgramaId(CRIANCAS_GRAFICOS[0].programas[0]?.id ?? "");
+    }
+  }, [CRIANCAS_GRAFICOS, criancaId]);
 
   const crianca = useMemo(
-    () => CRIANCAS_GRAFICOS.find((c) => c.id === criancaId)!,
-    [criancaId],
+    () => CRIANCAS_GRAFICOS.find((c) => c.id === criancaId),
+    [CRIANCAS_GRAFICOS, criancaId],
   );
 
   const programa = useMemo(
-    () => crianca.programas.find((p) => p.id === programaId) ?? crianca.programas[0],
+    () => crianca?.programas.find((p) => p.id === programaId) ?? crianca?.programas[0],
     [crianca, programaId],
   );
 
   const handleCrianca = (id: string) => {
     setCriancaId(id);
-    const c = CRIANCAS_GRAFICOS.find((x) => x.id === id)!;
-    setProgramaId(c.programas[0].id);
+    const c = CRIANCAS_GRAFICOS.find((x) => x.id === id);
+    if (c?.programas[0]) setProgramaId(c.programas[0].id);
   };
 
-  // Métricas calculadas
   const metricas = useMemo(() => {
+    if (!programa || programa.registros.length === 0) {
+      return { total: 0, acertosMedio: 0, evolucao: 0, independencia: 0 };
+    }
     const regs = programa.registros;
     const total = regs.length;
     const ultimo = regs[regs.length - 1];
@@ -42,9 +53,25 @@ export default function PaginaGraficos() {
     const independencia = Math.round(
       (regs.filter((r) => r.nivel === "IND" || r.nivel === "+").length / total) * 100,
     );
-
-    return { total, acertosMedio, evolucao, independencia, ultimo };
+    return { total, acertosMedio, evolucao, independencia };
   }, [programa]);
+
+  if (carregando) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!crianca || !programa) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <BarChart3 className="h-10 w-10 mb-3 opacity-40" />
+        <p className="text-sm">Nenhum programa com registros disponível para análise.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
