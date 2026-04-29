@@ -137,7 +137,11 @@ export default function PaginaSessoes() {
           </div>
 
           <div className="space-y-2 max-h-[calc(100vh-22rem)] overflow-y-auto pr-1">
-            {sessoesFiltradas.length === 0 ? (
+            {carregando ? (
+              <Card className="p-8 text-center border-dashed">
+                <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
+              </Card>
+            ) : sessoesFiltradas.length === 0 ? (
               <Card className="p-8 text-center border-dashed">
                 <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
                 <p className="text-sm text-muted-foreground">Nenhuma sessão encontrada.</p>
