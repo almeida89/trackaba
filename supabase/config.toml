@@ -1,1 +1,4 @@
 project_id = "lvdbihludlecorggtgxi"
+
+[functions.validar-token-escola]
+verify_jwt = false

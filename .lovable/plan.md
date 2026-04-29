@@ -1,106 +1,106 @@
 ## Objetivo
 
-Criar uma tela inicial de **Login / Cadastro** (e-mail e senha), proteger as rotas internas do sistema, armazenar dados de perfil dos usuários e implementar um sistema de **papéis** (admin, psicólogo, coordenador, recepcionista, família) com controle de acesso seguro. Criar também a conta admin de teste `admin@clinica.com` / `Admin@2025`.
+Deixar o TrackABA pronto para uma **reunião de demonstração comercial** com donos de clínica em 1-2 dias de trabalho. Não é versão vendável ainda — é uma demo polida com dados realistas e narrativa clara, suficiente para validar interesse e cobrar pré-venda.
+
+## Os 4 módulos que precisam estar impecáveis
+
+1. **Pasta da Criança + Sessões** — coração clínico do produto
+2. **Programas + Gráficos de evolução** — diferencial técnico ABA
+3. **Visão da Escola** (convite + portal externo) — diferencial competitivo
+4. **Visão da Família** (portal dos pais) — argumento de retenção
 
 ---
 
-## O que será entregue
+## Entregas
 
-1. **Tela `/auth`** — página inicial pública com duas abas:
-   - **Entrar** (e-mail + senha)
-   - **Criar conta** (nome completo, e-mail, telefone, senha)
-   - Mensagens de erro amigáveis em português (credenciais inválidas, e-mail já cadastrado, e-mail não confirmado, etc.)
-   - Aviso ao se cadastrar: "Confirme seu e-mail antes de entrar".
+### 1. Landing/Login com pitch de venda
+- Substituir tela `/auth` atual por uma versão com **hero institucional** à esquerda (logo TrackABA, headline "O CRM clínico feito para terapia ABA", 3 bullets de benefícios) e formulário à direita.
+- Botão grande **"Entrar como demonstração"** que faz login automático com `admin@clinica.com` / `Admin@2025` — para o cliente não ter que digitar nada na reunião.
+- Rodapé com selo "Compatível com LGPD" e contato.
 
-2. **Proteção de rotas** — todas as páginas internas (`/`, `/pacientes`, `/agenda`, `/avaliacoes`, `/configuracoes`, `/logs`, etc.) só são acessíveis para usuários autenticados. Quem não estiver logado é redirecionado para `/auth`.
+### 2. Remover trilha de auditoria fake (bloqueador de credibilidade)
+- Apagar os 15 logs hardcoded em `PaginaLogs.tsx`.
+- Criar tabela `logs_auditoria` no banco com RLS (apenas admin lê).
+- Registrar eventos reais: login, logout, criação de criança, convite de escola, alteração de papel.
+- Página `/logs` passa a ler do banco — começa vazia e vai populando conforme o cliente navega na demo (isso impressiona).
 
-3. **Cabeçalho/Sidebar** — exibe nome do usuário logado, papel (badge), e botão **Sair**.
+### 3. Seed de dados de exemplo realistas
+- Migrar Crianças, Sessões, Programas e Família dos arquivos `dados*.ts` para o banco com seed inicial.
+- Criar **3 crianças-demo** com nomes fictícios brasileiros, idades variadas, com:
+  - 8-12 sessões cada (últimos 60 dias)
+  - 3-4 programas ativos por criança em níveis de desempenho diferentes
+  - Registros ABC de exemplo
+  - Família vinculada (pai + mãe)
+  - 1 escola já convidada com permissões variadas
+- Gráficos passam a refletir esses dados reais → linhas de evolução fazem sentido.
 
-4. **Conta admin de teste** — criada automaticamente via migration:
-   - E-mail: `admin@clinica.com`
-   - Senha: `Admin@2025`
-   - Papel: `admin`
-   - Já confirmada (pulando verificação de e-mail apenas para esta conta seed).
+### 4. Portal da Família (novo)
+- Criar role `familia` que ao logar é redirecionado para `/familia/portal` (não vê barra lateral admin).
+- Tela mostra: foto e nome do filho, próxima sessão agendada, últimas 5 evoluções em linguagem simples (sem jargão técnico), gráfico simplificado de progresso, botão "Falar com a equipe".
+- Criar **conta de família-demo** (`familia@demo.com` / `Familia@2025`) já vinculada a uma das crianças do seed → na reunião você abre uma janela anônima e mostra a visão dos pais ao vivo.
 
-5. **Página `/configuracoes` → aba Usuários** (apenas admin) — listar usuários cadastrados e alterar o papel de cada um.
+### 5. Portal externo da Escola (completar o que falta)
+- Rota pública `/escola/visao/:token` que valida o `token_convite` da tabela `acessos_escola` sem exigir login na clínica.
+- Mostra apenas o que as permissões do convite autorizam (sessões, evolução, programas).
+- Banner no topo: "Acesso concedido por [Clínica X] — válido até [data]".
+- Na reunião você abre o link em outra aba mostrando "como o professor enxerga".
+
+### 6. Polimento de UI
+- Empty states bonitos em todas as listas (ilustração + texto + CTA), substituindo listas vazias.
+- Skeletons de carregamento em vez de telas em branco enquanto o Supabase responde.
+- Toasts de sucesso em todas as ações principais.
+- Revisar dashboard inicial (`/`): substituir números mock por contagens reais (`SELECT count(*)`).
+
+### 7. Material de apoio para a reunião
+Gerar e salvar em `/mnt/documents/`:
+- **Roteiro de demo** (PDF, ~2 páginas) — passo a passo de 25 minutos cobrindo os 4 módulos na ordem certa, com falas sugeridas.
+- **One-pager comercial** (PDF, 1 página) — problema, solução, diferenciais, próximos passos, valor sugerido.
+- **Checklist pré-reunião** — abrir 3 abas (admin, família, escola), limpar logs, etc.
 
 ---
 
-## Arquitetura técnica (banco de dados)
+## Detalhes técnicos
 
-### Enum `app_role`
+**Tabelas novas:**
+```text
+logs_auditoria    (id, user_id, acao, entidade, entidade_id, detalhes jsonb, criado_em)
+criancas          (id, nome, data_nasc, responsavel_id, ativo, criado_em, ...)
+sessoes           (id, crianca_id, terapeuta_id, data, duracao, observacoes, ...)
+programas         (id, crianca_id, nome, dominio, nivel_desempenho, ...)
+familia_membros   (id, crianca_id, user_id, parentesco)
 ```
-admin | psicologo | coordenador | recepcionista | familia
-```
+Todas com RLS por `user_id`/papel + função `tem_acesso_crianca(uuid)` (SECURITY DEFINER) para simplificar policies.
 
-### Tabela `profiles`
-- `id` (uuid, PK, FK → `auth.users.id`, ON DELETE CASCADE)
-- `nome_completo` (text)
-- `telefone` (text, nullable)
-- `avatar_url` (text, nullable)
-- `criado_em`, `atualizado_em` (timestamps)
-- RLS: cada usuário lê/atualiza somente o próprio perfil; admins leem todos.
+**Função SECURITY DEFINER exposta** (alerta atual): adicionar `REVOKE EXECUTE ... FROM authenticated` nas funções utilitárias internas, mantendo apenas `has_role` exposta.
 
-### Tabela `user_roles` (separada — segurança crítica)
-- `id` (uuid PK)
-- `user_id` (uuid → `auth.users.id`, ON DELETE CASCADE)
-- `role` (`app_role`)
-- UNIQUE (`user_id`, `role`)
-- RLS: usuário lê o próprio papel; apenas admin pode inserir/alterar/remover papéis.
+**Novos arquivos principais:**
+- `src/paginas/PaginaPortalFamilia.tsx`
+- `src/paginas/PaginaVisaoEscolaPublica.tsx` (rota pública)
+- `src/componentes/EmptyState.tsx`
+- `src/hooks/useLogAuditoria.tsx`
+- `supabase/migrations/<nova>_logs_auditoria_e_seed.sql`
 
-### Função `has_role(_user_id uuid, _role app_role) returns boolean`
-- `SECURITY DEFINER`, `STABLE`, `search_path = public`
-- Usada em todas as policies de admin para evitar recursão de RLS.
-
-### Trigger `handle_new_user`
-- Após `INSERT` em `auth.users`, cria automaticamente:
-  - linha em `profiles` (nome vindo do `raw_user_meta_data.nome_completo`)
-  - linha em `user_roles` com papel padrão `familia` (admin promove depois)
-
-### Seed do admin
-- Inserir usuário diretamente em `auth.users` com `email_confirmed_at = now()`, senha hasheada (`crypt('Admin@2025', gen_salt('bf'))`), e atribuir papel `admin` em `user_roles`.
+**Rota pública:** adicionar `/escola/visao/:token` em `App.tsx` FORA do `<RotaProtegida>`.
 
 ---
 
-## Arquitetura técnica (frontend)
+## O que NÃO entra nesta etapa
 
-### Novos arquivos
-- `src/paginas/PaginaAuth.tsx` — formulários de login e cadastro (Tabs do shadcn)
-- `src/hooks/useAuth.tsx` — provider/contexto com `user`, `session`, `loading`, `signIn`, `signUp`, `signOut`. Usa `onAuthStateChange` configurado **antes** de `getSession()` para evitar deadlocks.
-- `src/hooks/useUserRole.tsx` — busca o papel do usuário em `user_roles`
-- `src/componentes/RotaProtegida.tsx` — wrapper que redireciona para `/auth` se não houver sessão
-- `src/componentes/RotaAdmin.tsx` — wrapper extra que exige papel `admin`
-- `src/componentes/configuracoes/AbaUsuarios.tsx` — listagem + alteração de papéis (somente admin)
+- Envio real de e-mail de convite (escola fica com link copiável apenas)
+- Termo de consentimento LGPD assinável
+- Backup automatizado e exportação LGPD
+- 2FA, criptografia de campos
+- Pagamento/assinatura
 
-### Edits
-- `src/App.tsx` — envolver tudo no `AuthProvider`, adicionar rota pública `/auth` e proteger as demais com `<RotaProtegida>`
-- `src/componentes/layout/` (sidebar/header existente) — exibir nome + papel + botão Sair
-- `src/paginas/PaginaConfiguracoes.tsx` — adicionar aba "Usuários" visível apenas para admin
+Esses ficam para a fase "MVP vendável" (1-2 semanas), após validar interesse na demo.
 
 ---
 
-## Fluxo de uso
+## Resultado esperado
 
-1. Usuário abre o app → vê a tela `/auth`.
-2. **Cadastro:** preenche nome/e-mail/senha → recebe e-mail de confirmação → confirma → faz login.
-3. **Login:** entra e é redirecionado para `/` (dashboard).
-4. **Admin de teste:** entra direto com `admin@clinica.com` / `Admin@2025` (já confirmado), acessa Configurações → Usuários para promover outros usuários (ex.: definir alguém como `psicologo`).
-5. **Sair:** botão no header limpa a sessão e volta para `/auth`.
-
----
-
-## Pontos de segurança aplicados
-
-- Papéis em **tabela separada** (`user_roles`), nunca em `profiles` — evita escalonamento de privilégio.
-- Função `has_role` com `SECURITY DEFINER` para policies sem recursão.
-- RLS habilitado em **todas** as tabelas novas, com policies explícitas por operação.
-- Senha do admin de teste é apenas para desenvolvimento — recomendarei trocar antes de publicar.
-- Confirmação de e-mail mantida ativa (escolha do usuário).
-
----
-
-## O que NÃO será feito agora
-
-- Login com Google (você optou por apenas e-mail/senha).
-- Recuperação de senha (`/reset-password`) — posso adicionar depois se desejar.
-- E-mails de confirmação com domínio próprio — usaremos o template padrão da Lovable; podemos personalizar depois.
+Ao final, você consegue:
+1. Abrir a reunião com a landing nova → dono entende o produto em 30 segundos
+2. Login automático → entra direto numa clínica com 3 crianças, dados ricos, gráficos bonitos
+3. Demonstrar os 4 módulos seguindo o roteiro impresso
+4. Abrir aba anônima e mostrar a visão da família e a visão da escola ao vivo
+5. Encerrar com o one-pager comercial impresso na mão do cliente

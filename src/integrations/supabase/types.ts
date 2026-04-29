@@ -86,6 +86,134 @@ export type Database = {
         }
         Relationships: []
       }
+      criancas: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          data_nascimento: string
+          diagnostico: string | null
+          email_contato: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          responsavel_principal: string | null
+          telefone_contato: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_nascimento: string
+          diagnostico?: string | null
+          email_contato?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          responsavel_principal?: string | null
+          telefone_contato?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_nascimento?: string
+          diagnostico?: string | null
+          email_contato?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          responsavel_principal?: string | null
+          telefone_contato?: string | null
+        }
+        Relationships: []
+      }
+      familia_membros: {
+        Row: {
+          criado_em: string
+          crianca_id: string
+          id: string
+          parentesco: Database["public"]["Enums"]["parentesco_familia"]
+          pode_ver_evolucao: boolean
+          pode_ver_sessoes: boolean
+          user_id: string
+        }
+        Insert: {
+          criado_em?: string
+          crianca_id: string
+          id?: string
+          parentesco?: Database["public"]["Enums"]["parentesco_familia"]
+          pode_ver_evolucao?: boolean
+          pode_ver_sessoes?: boolean
+          user_id: string
+        }
+        Update: {
+          criado_em?: string
+          crianca_id?: string
+          id?: string
+          parentesco?: Database["public"]["Enums"]["parentesco_familia"]
+          pode_ver_evolucao?: boolean
+          pode_ver_sessoes?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "familia_membros_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logs_auditoria: {
+        Row: {
+          acao: Database["public"]["Enums"]["acao_log"]
+          criado_em: string
+          descricao: string
+          detalhes: Json | null
+          entidade: string
+          entidade_id: string | null
+          id: string
+          ip: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acao: Database["public"]["Enums"]["acao_log"]
+          criado_em?: string
+          descricao: string
+          detalhes?: Json | null
+          entidade: string
+          entidade_id?: string | null
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acao?: Database["public"]["Enums"]["acao_log"]
+          criado_em?: string
+          descricao?: string
+          detalhes?: Json | null
+          entidade?: string
+          entidade_id?: string | null
+          id?: string
+          ip?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           atualizado_em: string
@@ -112,6 +240,201 @@ export type Database = {
           telefone?: string | null
         }
         Relationships: []
+      }
+      programas: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          criado_em: string
+          crianca_id: string
+          criterio_mestria: string | null
+          data_inicio: string
+          descricao: string | null
+          dominio: Database["public"]["Enums"]["dominio_programa"]
+          id: string
+          meta: string | null
+          nivel_desempenho: Database["public"]["Enums"]["nivel_desempenho"]
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          crianca_id: string
+          criterio_mestria?: string | null
+          data_inicio?: string
+          descricao?: string | null
+          dominio: Database["public"]["Enums"]["dominio_programa"]
+          id?: string
+          meta?: string | null
+          nivel_desempenho?: Database["public"]["Enums"]["nivel_desempenho"]
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          crianca_id?: string
+          criterio_mestria?: string | null
+          data_inicio?: string
+          descricao?: string | null
+          dominio?: Database["public"]["Enums"]["dominio_programa"]
+          id?: string
+          meta?: string | null
+          nivel_desempenho?: Database["public"]["Enums"]["nivel_desempenho"]
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programas_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_abc: {
+        Row: {
+          antecedente: string
+          comportamento: string
+          consequencia: string
+          criado_em: string
+          horario: string
+          id: string
+          intensidade: string | null
+          sessao_id: string
+        }
+        Insert: {
+          antecedente: string
+          comportamento: string
+          consequencia: string
+          criado_em?: string
+          horario: string
+          id?: string
+          intensidade?: string | null
+          sessao_id: string
+        }
+        Update: {
+          antecedente?: string
+          comportamento?: string
+          consequencia?: string
+          criado_em?: string
+          horario?: string
+          id?: string
+          intensidade?: string | null
+          sessao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_abc_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resultados_programa: {
+        Row: {
+          acertos: number
+          criado_em: string
+          id: string
+          observacao: string | null
+          programa_id: string
+          sessao_id: string
+          tentativas: number
+        }
+        Insert: {
+          acertos?: number
+          criado_em?: string
+          id?: string
+          observacao?: string | null
+          programa_id: string
+          sessao_id: string
+          tentativas?: number
+        }
+        Update: {
+          acertos?: number
+          criado_em?: string
+          id?: string
+          observacao?: string | null
+          programa_id?: string
+          sessao_id?: string
+          tentativas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resultados_programa_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "programas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resultados_programa_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessoes: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          crianca_id: string
+          data_sessao: string
+          duracao_minutos: number
+          humor_final: number | null
+          humor_inicial: number | null
+          id: string
+          observacoes: string | null
+          resumo_familia: string | null
+          terapeuta_id: string | null
+          terapeuta_nome: string
+          tipo: Database["public"]["Enums"]["tipo_sessao"]
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          crianca_id: string
+          data_sessao: string
+          duracao_minutos?: number
+          humor_final?: number | null
+          humor_inicial?: number | null
+          id?: string
+          observacoes?: string | null
+          resumo_familia?: string | null
+          terapeuta_id?: string | null
+          terapeuta_nome: string
+          tipo?: Database["public"]["Enums"]["tipo_sessao"]
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          crianca_id?: string
+          data_sessao?: string
+          duracao_minutos?: number
+          humor_final?: number | null
+          humor_inicial?: number | null
+          id?: string
+          observacoes?: string | null
+          resumo_familia?: string | null
+          terapeuta_id?: string | null
+          terapeuta_nome?: string
+          tipo?: Database["public"]["Enums"]["tipo_sessao"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessoes_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -146,15 +469,57 @@ export type Database = {
         }
         Returns: boolean
       }
+      tem_acesso_crianca: {
+        Args: { _crianca_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      acao_log:
+        | "login"
+        | "logout"
+        | "criar"
+        | "editar"
+        | "excluir"
+        | "visualizar"
+        | "exportar"
+        | "alterar_papel"
+        | "convidar_escola"
+        | "falha_login"
       app_role:
         | "admin"
         | "psicologo"
         | "coordenador"
         | "recepcionista"
         | "familia"
+      dominio_programa:
+        | "comunicacao"
+        | "social"
+        | "cognitivo"
+        | "autocuidado"
+        | "academico"
+        | "motor"
+        | "comportamental"
+      nivel_desempenho:
+        | "linha_base"
+        | "em_aquisicao"
+        | "em_manutencao"
+        | "generalizado"
+        | "independente"
+      parentesco_familia:
+        | "mae"
+        | "pai"
+        | "avo"
+        | "tio_tia"
+        | "responsavel_legal"
+        | "outro"
       status_acesso_escola: "ativo" | "pendente" | "expirado" | "revogado"
+      tipo_sessao:
+        | "individual"
+        | "grupo"
+        | "observacao"
+        | "avaliacao"
+        | "remota"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -282,6 +647,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      acao_log: [
+        "login",
+        "logout",
+        "criar",
+        "editar",
+        "excluir",
+        "visualizar",
+        "exportar",
+        "alterar_papel",
+        "convidar_escola",
+        "falha_login",
+      ],
       app_role: [
         "admin",
         "psicologo",
@@ -289,7 +666,32 @@ export const Constants = {
         "recepcionista",
         "familia",
       ],
+      dominio_programa: [
+        "comunicacao",
+        "social",
+        "cognitivo",
+        "autocuidado",
+        "academico",
+        "motor",
+        "comportamental",
+      ],
+      nivel_desempenho: [
+        "linha_base",
+        "em_aquisicao",
+        "em_manutencao",
+        "generalizado",
+        "independente",
+      ],
+      parentesco_familia: [
+        "mae",
+        "pai",
+        "avo",
+        "tio_tia",
+        "responsavel_legal",
+        "outro",
+      ],
       status_acesso_escola: ["ativo", "pendente", "expirado", "revogado"],
+      tipo_sessao: ["individual", "grupo", "observacao", "avaliacao", "remota"],
     },
   },
 } as const
