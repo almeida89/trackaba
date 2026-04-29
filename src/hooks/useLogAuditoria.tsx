@@ -29,7 +29,8 @@ export function useLogAuditoria() {
     async ({ acao, entidade, descricao, entidadeId, detalhes }: RegistrarLogParams) => {
       if (!user) return;
       try {
-        await supabase.from("logs_auditoria").insert({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("logs_auditoria" as any) as any).insert({
           user_id: user.id,
           user_email: user.email,
           acao,
