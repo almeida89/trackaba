@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   User,
@@ -14,12 +14,14 @@ import {
   Paperclip,
   History,
   UserCheck,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
 import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
 import { SecaoFamiliarCrianca } from "@/componentes/familia/SecaoFamiliarCrianca";
+import { useCrianca, calcularIdade, formatarDataBR, CriancaDetalhe } from "@/hooks/useCrianca";
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
@@ -36,27 +38,28 @@ const abas = [
   { id: "historico", label: "Histórico", icone: History },
 ];
 
-const niveisDesempenho = [
-  { sigla: "-", nome: "Linha Base", cor: "bg-muted text-muted-foreground" },
-  { sigla: "AFT", nome: "Ajuda Física Total", cor: "bg-destructive/15 text-destructive" },
-  { sigla: "AFL", nome: "Ajuda Física Leve", cor: "bg-status-warning/15 text-status-warning" },
-  { sigla: "AG", nome: "Ajuda Gestual", cor: "bg-status-info/15 text-status-info" },
-  { sigla: "IND", nome: "Independente", cor: "bg-status-success/15 text-status-success" },
-  { sigla: "+", nome: "Acima do Esperado", cor: "bg-primary/15 text-primary" },
-];
+function ConteudoCadastro({ crianca }: { crianca: CriancaDetalhe }) {
+  const idade = calcularIdade(crianca.data_nascimento);
+  const dadosPessoais: [string, string][] = [
+    ["Nome Completo", crianca.nome],
+    ["Data de Nascimento", formatarDataBR(crianca.data_nascimento)],
+    ["Idade", `${idade} ${idade === 1 ? "ano" : "anos"}`],
+    ["Responsável Principal", crianca.responsavel_principal || "—"],
+    ["Telefone de Contato", crianca.telefone_contato || "—"],
+    ["E-mail de Contato", crianca.email_contato || "—"],
+  ];
+  const dadosClinicos: [string, string][] = [
+    ["Diagnóstico", crianca.diagnostico || "—"],
+    ["Status", crianca.ativo ? "Ativo" : "Inativo"],
+    ["Cadastrado em", formatarDataBR(crianca.criado_em)],
+    ["Observações", crianca.observacoes || "—"],
+  ];
 
-function ConteudoCadastro() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-4">
         <h3 className="font-heading font-semibold text-foreground">Dados Pessoais</h3>
-        {[
-          ["Nome Completo", "Lucas Mendes da Silva"],
-          ["Data de Nascimento", "15/03/2021"],
-          ["Idade", "5 anos"],
-          ["CPF Responsável", "123.456.789-00"],
-          ["Endereço", "Rua das Flores, 123 — São Paulo, SP"],
-        ].map(([rotulo, valor]) => (
+        {dadosPessoais.map(([rotulo, valor]) => (
           <div key={rotulo}>
             <p className="text-xs text-muted-foreground">{rotulo}</p>
             <p className="text-sm font-medium text-foreground">{valor}</p>
@@ -65,16 +68,10 @@ function ConteudoCadastro() {
       </div>
       <div className="space-y-4">
         <h3 className="font-heading font-semibold text-foreground">Informações Clínicas</h3>
-        {[
-          ["Diagnóstico", "TEA Nível 1 (CID F84.0)"],
-          ["Data do Diagnóstico", "10/06/2023"],
-          ["Médico Responsável", "Dr. Roberto Campos"],
-          ["Convênio", "Unimed — Plano Premium"],
-          ["Observações", "Hipersensibilidade auditiva. Interesses restritos em dinossauros."],
-        ].map(([rotulo, valor]) => (
+        {dadosClinicos.map(([rotulo, valor]) => (
           <div key={rotulo}>
             <p className="text-xs text-muted-foreground">{rotulo}</p>
-            <p className="text-sm font-medium text-foreground">{valor}</p>
+            <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{valor}</p>
           </div>
         ))}
       </div>
@@ -90,35 +87,52 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
   );
 }
 
-type CriancaState = {
-  nome?: string;
-  idade?: number;
-  diagnostico?: string;
-  status?: string;
-};
-
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
-  const localizacao = useLocation();
-  const criancaState = (localizacao.state as { crianca?: CriancaState } | null)?.crianca;
+  const { crianca, carregando } = useCrianca(id);
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
 
-  const nome = criancaState?.nome ?? "Lucas Mendes";
-  const idade = criancaState?.idade ?? 5;
-  const diagnostico = criancaState?.diagnostico ?? "TEA Nível 1";
-  const status = criancaState?.status ?? "Ativo";
+  if (carregando) {
+    return (
+      <div className="flex items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!crianca) {
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => navegar("/criancas")}
+          className="p-2 rounded-lg hover:bg-muted transition-colors inline-flex items-center gap-2 text-sm text-muted-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </button>
+        <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
+          <p className="font-medium text-foreground">Criança não encontrada</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            O cadastro pode ter sido removido ou você não tem acesso.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const idade = calcularIdade(crianca.data_nascimento);
+  const status = crianca.ativo ? "Ativo" : "Inativo";
 
   const renderizarConteudo = () => {
     switch (abaAtiva) {
       case "cadastro":
-        return <ConteudoCadastro />;
+        return <ConteudoCadastro crianca={crianca} />;
       case "programas":
-        return <ProgramasCrianca criancaId={id ?? "1"} criancaNome={nome} />;
+        return <ProgramasCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "sessoes":
-        return <SessoesCrianca criancaId={id ?? "1"} criancaNome={nome} />;
+        return <SessoesCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "familiar":
-        return <SecaoFamiliarCrianca criancaId={id ?? "1"} criancaNome={nome} />;
+        return <SecaoFamiliarCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
@@ -136,13 +150,20 @@ export default function PastaCrianca() {
         </button>
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
-            {nome}
+            {crianca.nome}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {idade} anos • {diagnostico} • Pasta #{id}
+            {idade} {idade === 1 ? "ano" : "anos"} • {crianca.diagnostico || "Sem diagnóstico"}
           </p>
         </div>
-        <Badge className="ml-auto bg-status-success/15 text-status-success border-status-success/30">
+        <Badge
+          className={cn(
+            "ml-auto border",
+            crianca.ativo
+              ? "bg-status-success/15 text-status-success border-status-success/30"
+              : "bg-muted text-muted-foreground border-border"
+          )}
+        >
           {status}
         </Badge>
       </div>
