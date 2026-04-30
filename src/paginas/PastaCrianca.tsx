@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -15,7 +15,10 @@ import {
   History,
   UserCheck,
   Loader2,
+  Camera,
+  Baby,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
@@ -90,8 +93,29 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
-  const { crianca, carregando } = useCrianca(id);
+  const { crianca, carregando, enviarFoto, enviandoFoto } = useCrianca(id);
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
+  const inputFotoRef = useRef<HTMLInputElement>(null);
+
+  const aoSelecionarFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!arquivo) return;
+    const tiposAceitos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposAceitos.includes(arquivo.type)) {
+      toast.error("Use JPG, PNG ou WebP");
+      return;
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 5MB)");
+      return;
+    }
+    try {
+      await enviarFoto(arquivo);
+    } catch {
+      // toast tratado no hook
+    }
+  };
 
   if (carregando) {
     return (
@@ -148,6 +172,41 @@ export default function PastaCrianca() {
         >
           <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </button>
+
+        <div className="relative group">
+          <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-border">
+            {crianca.foto_url ? (
+              <img
+                src={crianca.foto_url}
+                alt={crianca.nome}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Baby className="h-6 w-6 text-primary" />
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => inputFotoRef.current?.click()}
+            disabled={enviandoFoto}
+            className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white disabled:opacity-100 disabled:bg-black/60"
+            aria-label="Trocar foto"
+          >
+            {enviandoFoto ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Camera className="h-4 w-4" />
+            )}
+          </button>
+          <input
+            ref={inputFotoRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={aoSelecionarFoto}
+          />
+        </div>
+
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">
             {crianca.nome}

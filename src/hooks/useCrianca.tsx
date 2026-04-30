@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -15,6 +15,9 @@ export interface CriancaDetalhe {
   ativo: boolean;
   criado_em: string;
 }
+
+const COLUNAS =
+  "id,nome,data_nascimento,diagnostico,responsavel_principal,telefone_contato,email_contato,observacoes,foto_url,ativo,criado_em";
 
 export function calcularIdade(iso: string): number {
   const nasc = new Date(iso);
@@ -33,31 +36,60 @@ export function formatarDataBR(iso: string | null | undefined): string {
 }
 
 export function useCrianca(id: string | undefined) {
-  const [crianca, setCrianca] = useState<CriancaDetalhe | null>(null);
-  const [carregando, setCarregando] = useState(true);
+  const queryClient = useQueryClient();
 
-  const carregar = useCallback(async () => {
-    if (!id) {
-      setCarregando(false);
-      return;
-    }
-    setCarregando(true);
-    const { data, error } = await supabase
-      .from("criancas")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+  const query = useQuery({
+    queryKey: ["criancas", "detalhe", id],
+    enabled: !!id,
+    queryFn: async (): Promise<CriancaDetalhe | null> => {
+      const { data, error } = await supabase
+        .from("criancas")
+        .select(COLUNAS)
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as CriancaDetalhe) ?? null;
+    },
+    staleTime: 30_000,
+  });
 
-    if (error) {
-      toast.error("Erro ao carregar criança");
-    }
-    setCrianca(data ?? null);
-    setCarregando(false);
-  }, [id]);
+  const mutFoto = useMutation({
+    mutationFn: async (arquivo: File) => {
+      if (!id) throw new Error("ID inválido");
+      const ext = arquivo.name.split(".").pop()?.toLowerCase() || "jpg";
+      const caminho = `${id}/foto-${Date.now()}.${ext}`;
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
+      const { error: errUp } = await supabase.storage
+        .from("fotos-criancas")
+        .upload(caminho, arquivo, { upsert: false, contentType: arquivo.type });
+      if (errUp) throw errUp;
 
-  return { crianca, carregando, recarregar: carregar };
+      // URL assinada (bucket privado) válida por 1 ano
+      const { data: signed, error: errSign } = await supabase.storage
+        .from("fotos-criancas")
+        .createSignedUrl(caminho, 60 * 60 * 24 * 365);
+      if (errSign) throw errSign;
+
+      const { error: errUpd } = await supabase
+        .from("criancas")
+        .update({ foto_url: signed.signedUrl })
+        .eq("id", id);
+      if (errUpd) throw errUpd;
+
+      return signed.signedUrl;
+    },
+    onSuccess: () => {
+      toast.success("Foto atualizada");
+      queryClient.invalidateQueries({ queryKey: ["criancas"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao enviar foto: " + e.message),
+  });
+
+  return {
+    crianca: query.data ?? null,
+    carregando: query.isLoading,
+    recarregar: () => queryClient.invalidateQueries({ queryKey: ["criancas", "detalhe", id] }),
+    enviarFoto: mutFoto.mutateAsync,
+    enviandoFoto: mutFoto.isPending,
+  };
 }
