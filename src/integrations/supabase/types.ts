@@ -84,6 +84,189 @@ export type Database = {
           ver_relatorios?: boolean
           ver_sessoes?: boolean
         }
+        Relationships: [
+          {
+            foreignKeyName: "acessos_escola_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agendamentos: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          criado_por: string | null
+          crianca_id: string
+          data_fim: string
+          data_inicio: string
+          id: string
+          observacoes: string | null
+          sala: string | null
+          status: Database["public"]["Enums"]["status_agendamento"]
+          terapeuta_id: string | null
+          terapeuta_nome: string
+          tipo: Database["public"]["Enums"]["tipo_sessao"]
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id: string
+          data_fim: string
+          data_inicio: string
+          id?: string
+          observacoes?: string | null
+          sala?: string | null
+          status?: Database["public"]["Enums"]["status_agendamento"]
+          terapeuta_id?: string | null
+          terapeuta_nome: string
+          tipo?: Database["public"]["Enums"]["tipo_sessao"]
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id?: string
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          observacoes?: string | null
+          sala?: string | null
+          status?: Database["public"]["Enums"]["status_agendamento"]
+          terapeuta_id?: string | null
+          terapeuta_nome?: string
+          tipo?: Database["public"]["Enums"]["tipo_sessao"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacoes: {
+        Row: {
+          arquivo_url: string | null
+          atualizado_em: string
+          avaliador_id: string | null
+          avaliador_nome: string
+          criado_em: string
+          criado_por: string | null
+          crianca_id: string
+          data_avaliacao: string
+          id: string
+          observacoes: string | null
+          pontuacao: number | null
+          pontuacao_maxima: number | null
+          relatorio: string | null
+          status: Database["public"]["Enums"]["status_avaliacao"]
+          tipo: Database["public"]["Enums"]["tipo_avaliacao"]
+        }
+        Insert: {
+          arquivo_url?: string | null
+          atualizado_em?: string
+          avaliador_id?: string | null
+          avaliador_nome: string
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id: string
+          data_avaliacao: string
+          id?: string
+          observacoes?: string | null
+          pontuacao?: number | null
+          pontuacao_maxima?: number | null
+          relatorio?: string | null
+          status?: Database["public"]["Enums"]["status_avaliacao"]
+          tipo: Database["public"]["Enums"]["tipo_avaliacao"]
+        }
+        Update: {
+          arquivo_url?: string | null
+          atualizado_em?: string
+          avaliador_id?: string | null
+          avaliador_nome?: string
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id?: string
+          data_avaliacao?: string
+          id?: string
+          observacoes?: string | null
+          pontuacao?: number | null
+          pontuacao_maxima?: number | null
+          relatorio?: string | null
+          status?: Database["public"]["Enums"]["status_avaliacao"]
+          tipo?: Database["public"]["Enums"]["tipo_avaliacao"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clinica_config: {
+        Row: {
+          atualizado_em: string
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          configuracoes: Json | null
+          cor_primaria: string | null
+          criado_em: string
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          horario_funcionamento: Json | null
+          id: string
+          logo_url: string | null
+          nome: string
+          site: string | null
+          telefone: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          configuracoes?: Json | null
+          cor_primaria?: string | null
+          criado_em?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          horario_funcionamento?: Json | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          site?: string | null
+          telefone?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          configuracoes?: Json | null
+          cor_primaria?: string | null
+          criado_em?: string
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          horario_funcionamento?: Json | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          site?: string | null
+          telefone?: string | null
+        }
         Relationships: []
       }
       criancas: {
@@ -171,6 +354,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      funcionarios: {
+        Row: {
+          ativo: boolean
+          atualizado_em: string
+          cargo: Database["public"]["Enums"]["cargo_funcionario"]
+          criado_em: string
+          data_admissao: string | null
+          email: string
+          especialidade: string | null
+          id: string
+          nome_completo: string
+          observacoes: string | null
+          registro_conselho: string | null
+          telefone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          atualizado_em?: string
+          cargo?: Database["public"]["Enums"]["cargo_funcionario"]
+          criado_em?: string
+          data_admissao?: string | null
+          email: string
+          especialidade?: string | null
+          id?: string
+          nome_completo: string
+          observacoes?: string | null
+          registro_conselho?: string | null
+          telefone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          atualizado_em?: string
+          cargo?: Database["public"]["Enums"]["cargo_funcionario"]
+          criado_em?: string
+          data_admissao?: string | null
+          email?: string
+          especialidade?: string | null
+          id?: string
+          nome_completo?: string
+          observacoes?: string | null
+          registro_conselho?: string | null
+          telefone?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       logs_auditoria: {
         Row: {
@@ -492,6 +723,14 @@ export type Database = {
         | "coordenador"
         | "recepcionista"
         | "familia"
+      cargo_funcionario:
+        | "psicologo"
+        | "coordenador"
+        | "recepcionista"
+        | "admin"
+        | "terapeuta"
+        | "supervisor"
+        | "outro"
       dominio_programa:
         | "comunicacao"
         | "social"
@@ -514,6 +753,21 @@ export type Database = {
         | "responsavel_legal"
         | "outro"
       status_acesso_escola: "ativo" | "pendente" | "expirado" | "revogado"
+      status_agendamento:
+        | "agendado"
+        | "confirmado"
+        | "realizado"
+        | "cancelado"
+        | "faltou"
+      status_avaliacao: "agendada" | "em_andamento" | "concluida" | "cancelada"
+      tipo_avaliacao:
+        | "vbmapp"
+        | "ablls"
+        | "peak"
+        | "denver"
+        | "adir"
+        | "ados"
+        | "outra"
       tipo_sessao:
         | "individual"
         | "grupo"
@@ -666,6 +920,15 @@ export const Constants = {
         "recepcionista",
         "familia",
       ],
+      cargo_funcionario: [
+        "psicologo",
+        "coordenador",
+        "recepcionista",
+        "admin",
+        "terapeuta",
+        "supervisor",
+        "outro",
+      ],
       dominio_programa: [
         "comunicacao",
         "social",
@@ -691,6 +954,23 @@ export const Constants = {
         "outro",
       ],
       status_acesso_escola: ["ativo", "pendente", "expirado", "revogado"],
+      status_agendamento: [
+        "agendado",
+        "confirmado",
+        "realizado",
+        "cancelado",
+        "faltou",
+      ],
+      status_avaliacao: ["agendada", "em_andamento", "concluida", "cancelada"],
+      tipo_avaliacao: [
+        "vbmapp",
+        "ablls",
+        "peak",
+        "denver",
+        "adir",
+        "ados",
+        "outra",
+      ],
       tipo_sessao: ["individual", "grupo", "observacao", "avaliacao", "remota"],
     },
   },
