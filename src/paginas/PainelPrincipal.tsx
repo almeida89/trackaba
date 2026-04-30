@@ -8,6 +8,7 @@ import {
   AlertCircle,
   UserCheck,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
 import {
   LineChart,
@@ -47,6 +48,7 @@ const atividadesRecentes = [
 ];
 
 export default function PainelPrincipal() {
+  const navegar = useNavigate();
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -196,13 +198,14 @@ export default function PainelPrincipal() {
           </h3>
           <div className="space-y-2">
             {[
-              { icone: Baby, label: "Nova Criança", cor: "text-primary" },
-              { icone: ClipboardList, label: "Registrar Sessão", cor: "text-status-success" },
-              { icone: FileCheck, label: "Nova Avaliação", cor: "text-status-info" },
-              { icone: Calendar, label: "Agendar", cor: "text-status-warning" },
+              { icone: Baby, label: "Nova Criança", cor: "text-primary", rota: "/criancas" },
+              { icone: ClipboardList, label: "Registrar Sessão", cor: "text-status-success", rota: "/sessoes" },
+              { icone: FileCheck, label: "Nova Avaliação", cor: "text-status-info", rota: "/avaliacoes" },
+              { icone: Calendar, label: "Agendar", cor: "text-status-warning", rota: "/agenda" },
             ].map((atalho, i) => (
               <button
                 key={i}
+                onClick={() => navegar(atalho.rota)}
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/60 transition-colors text-left"
               >
                 <atalho.icone className={`h-4 w-4 ${atalho.cor}`} />
