@@ -31,8 +31,14 @@ function traduzirErro(msg: string | undefined): string {
   if (m.includes("rate limit") || m.includes("too many requests")) return "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.";
   if (m.includes("pwned") || m.includes("compromised") || m.includes("leaked"))
     return "Esta senha apareceu em vazamentos públicos de dados. Escolha uma senha diferente para sua segurança.";
-  if (m.includes("weak password") || m.includes("password is too weak"))
-    return "Senha muito fraca. Use ao menos 8 caracteres com letras maiúsculas, minúsculas e números.";
+  if (
+    m.includes("known to be weak") ||
+    m.includes("easy to guess") ||
+    m.includes("weak password") ||
+    m.includes("password is too weak") ||
+    (m.includes("weak") && m.includes("password"))
+  )
+    return "Senha muito fraca e fácil de adivinhar. Escolha outra com ao menos 8 caracteres, misturando maiúsculas, minúsculas, números e símbolos.";
   if (m.includes("same as the old password") || m.includes("new password should be different"))
     return "A nova senha deve ser diferente da anterior.";
   if (m.includes("token has expired") || m.includes("invalid token") || m.includes("expired"))
