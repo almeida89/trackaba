@@ -92,6 +92,13 @@ export type Database = {
             referencedRelation: "criancas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "acessos_escola_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "vw_criancas_listagem"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agendamentos: {
@@ -146,6 +153,13 @@ export type Database = {
             columns: ["crianca_id"]
             isOneToOne: false
             referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agendamentos_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "vw_criancas_listagem"
             referencedColumns: ["id"]
           },
         ]
@@ -208,6 +222,13 @@ export type Database = {
             columns: ["crianca_id"]
             isOneToOne: false
             referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "vw_criancas_listagem"
             referencedColumns: ["id"]
           },
         ]
@@ -399,6 +420,13 @@ export type Database = {
             columns: ["crianca_id"]
             isOneToOne: false
             referencedRelation: "criancas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "familia_membros_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "vw_criancas_listagem"
             referencedColumns: ["id"]
           },
         ]
@@ -595,6 +623,13 @@ export type Database = {
             referencedRelation: "criancas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "programas_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "vw_criancas_listagem"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rate_limit_publico: {
@@ -767,6 +802,13 @@ export type Database = {
             referencedRelation: "criancas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sessoes_crianca_id_fkey"
+            columns: ["crianca_id"]
+            isOneToOne: false
+            referencedRelation: "vw_criancas_listagem"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -792,7 +834,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_criancas_listagem: {
+        Row: {
+          ativo: boolean | null
+          criado_em: string | null
+          data_nascimento: string | null
+          diagnostico: string | null
+          foto_url: string | null
+          id: string | null
+          idade: number | null
+          nome: string | null
+          responsavel_principal: string | null
+          ultima_sessao_data: string | null
+          ultima_sessao_terapeuta: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       consumir_rate_limit: {
