@@ -93,8 +93,29 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
-  const { crianca, carregando } = useCrianca(id);
+  const { crianca, carregando, enviarFoto, enviandoFoto } = useCrianca(id);
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
+  const inputFotoRef = useRef<HTMLInputElement>(null);
+
+  const aoSelecionarFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!arquivo) return;
+    const tiposAceitos = ["image/jpeg", "image/png", "image/webp"];
+    if (!tiposAceitos.includes(arquivo.type)) {
+      toast.error("Use JPG, PNG ou WebP");
+      return;
+    }
+    if (arquivo.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máx. 5MB)");
+      return;
+    }
+    try {
+      await enviarFoto(arquivo);
+    } catch {
+      // toast tratado no hook
+    }
+  };
 
   if (carregando) {
     return (
