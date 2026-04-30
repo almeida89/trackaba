@@ -269,6 +269,54 @@ export type Database = {
         }
         Relationships: []
       }
+      convites_usuario: {
+        Row: {
+          aceito_em: string | null
+          aceito_por: string | null
+          atualizado_em: string
+          convidado_por: string | null
+          criado_em: string
+          email: string
+          expira_em: string
+          id: string
+          nome_completo: string
+          observacao: string | null
+          papel: Database["public"]["Enums"]["app_role"]
+          status: Database["public"]["Enums"]["status_convite"]
+          token: string
+        }
+        Insert: {
+          aceito_em?: string | null
+          aceito_por?: string | null
+          atualizado_em?: string
+          convidado_por?: string | null
+          criado_em?: string
+          email: string
+          expira_em?: string
+          id?: string
+          nome_completo: string
+          observacao?: string | null
+          papel?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["status_convite"]
+          token?: string
+        }
+        Update: {
+          aceito_em?: string | null
+          aceito_por?: string | null
+          atualizado_em?: string
+          convidado_por?: string | null
+          criado_em?: string
+          email?: string
+          expira_em?: string
+          id?: string
+          nome_completo?: string
+          observacao?: string | null
+          papel?: Database["public"]["Enums"]["app_role"]
+          status?: Database["public"]["Enums"]["status_convite"]
+          token?: string
+        }
+        Relationships: []
+      }
       criancas: {
         Row: {
           ativo: boolean
@@ -445,6 +493,30 @@ export type Database = {
         }
         Relationships: []
       }
+      origens_permitidas: {
+        Row: {
+          ativo: boolean
+          criado_em: string
+          descricao: string | null
+          id: string
+          origem: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          origem: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string
+          descricao?: string | null
+          id?: string
+          origem?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           atualizado_em: string
@@ -524,6 +596,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rate_limit_publico: {
+        Row: {
+          bloqueado_ate: string | null
+          criado_em: string
+          endpoint: string
+          id: string
+          identificador: string
+          janela_inicio: string
+          tentativas: number
+        }
+        Insert: {
+          bloqueado_ate?: string | null
+          criado_em?: string
+          endpoint: string
+          id?: string
+          identificador: string
+          janela_inicio?: string
+          tentativas?: number
+        }
+        Update: {
+          bloqueado_ate?: string | null
+          criado_em?: string
+          endpoint?: string
+          id?: string
+          identificador?: string
+          janela_inicio?: string
+          tentativas?: number
+        }
+        Relationships: []
       }
       registros_abc: {
         Row: {
@@ -693,6 +795,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consumir_rate_limit: {
+        Args: {
+          _bloqueio_minutos?: number
+          _endpoint: string
+          _identificador: string
+          _janela_minutos?: number
+          _max_tentativas?: number
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -704,6 +816,7 @@ export type Database = {
         Args: { _crianca_id: string; _user_id: string }
         Returns: boolean
       }
+      validar_forca_senha: { Args: { _senha: string }; Returns: Json }
     }
     Enums: {
       acao_log:
@@ -760,6 +873,7 @@ export type Database = {
         | "cancelado"
         | "faltou"
       status_avaliacao: "agendada" | "em_andamento" | "concluida" | "cancelada"
+      status_convite: "pendente" | "aceito" | "expirado" | "revogado"
       tipo_avaliacao:
         | "vbmapp"
         | "ablls"
@@ -962,6 +1076,7 @@ export const Constants = {
         "faltou",
       ],
       status_avaliacao: ["agendada", "em_andamento", "concluida", "cancelada"],
+      status_convite: ["pendente", "aceito", "expirado", "revogado"],
       tipo_avaliacao: [
         "vbmapp",
         "ablls",
