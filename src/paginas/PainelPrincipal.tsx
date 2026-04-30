@@ -48,6 +48,7 @@ const atividadesRecentes = [
 ];
 
 export default function PainelPrincipal() {
+  const navegar = useNavigate();
   return (
     <div className="space-y-6">
       {/* Header */}
