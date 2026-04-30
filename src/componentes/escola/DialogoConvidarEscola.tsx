@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { CRIANCAS_DISPONIVEIS } from "@/componentes/sessoes/dadosSessoes";
+// CRIANCAS_DISPONIVEIS substituído pela busca real do Supabase abaixo
+const CRIANCAS_DISPONIVEIS: { id: string; nome: string }[] = [];
 import { AcessoEscola } from "./tiposEscola";
 import { supabase } from "@/integrations/supabase/client";
 import { mapearLinhaParaAcesso } from "./mapearAcessoEscola";

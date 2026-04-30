@@ -5,17 +5,17 @@ import { cn } from "@/lib/utils";
 import { Sessao, StatusSessao } from "./tiposSessoes";
 
 const CORES_STATUS: Record<StatusSessao, string> = {
-  agendada: "bg-status-info/15 text-status-info border-status-info/30",
-  em_andamento: "bg-primary/15 text-primary border-primary/30",
-  concluida: "bg-status-success/15 text-status-success border-status-success/30",
+  rascunho: "bg-status-warning/15 text-status-warning border-status-warning/30",
+  finalizada: "bg-primary/15 text-primary border-primary/30",
+  assinada: "bg-status-success/15 text-status-success border-status-success/30",
   cancelada: "bg-muted text-muted-foreground border-border",
   falta: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
 const ROTULOS_STATUS: Record<StatusSessao, string> = {
-  agendada: "Agendada",
-  em_andamento: "Em andamento",
-  concluida: "Concluída",
+  rascunho: "Rascunho",
+  finalizada: "Finalizada",
+  assinada: "Assinada",
   cancelada: "Cancelada",
   falta: "Falta",
 };

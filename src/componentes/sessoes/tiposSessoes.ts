@@ -1,4 +1,4 @@
-export type StatusSessao = "agendada" | "em_andamento" | "concluida" | "cancelada" | "falta";
+export type StatusSessao = "rascunho" | "finalizada" | "assinada" | "cancelada" | "falta";
 export type HumorCrianca = "otimo" | "bom" | "neutro" | "irritado" | "ansioso" | "sonolento";
 export type NivelDesempenho = "-" | "AFT" | "AFL" | "AG" | "IND" | "+";
 
@@ -33,7 +33,7 @@ export interface Sessao {
   criancaNome: string;
   profissionalId: string;
   profissionalNome: string;
-  data: string; // ISO
+  data: string; // ISO yyyy-mm-dd
   horaInicio: string;
   horaFim: string;
   duracaoMin: number;
@@ -49,4 +49,16 @@ export interface Sessao {
   narrativaAbc: NarrativaABC[];
   reforcadores: ReforcadorUsado[];
   anexos: { nome: string; tipo: "imagem" | "video" | "audio" }[];
+  assinadaEm?: string;
+  assinadaPor?: string;
+  assinaturaHash?: string;
+  finalizadaEm?: string;
 }
+
+export const ROTULOS_STATUS_SESSAO: Record<StatusSessao, string> = {
+  rascunho: "Rascunho",
+  finalizada: "Finalizada",
+  assinada: "Assinada",
+  cancelada: "Cancelada",
+  falta: "Falta",
+};

@@ -19,7 +19,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SESSOES_INICIAIS } from "@/componentes/sessoes/dadosSessoes";
+const SESSOES_INICIAIS: any[] = []; // TODO: integrar com sessões reais do banco
 import {
   BIBLIOTECA_PROGRAMAS,
   PROGRAMAS_CRIANCA_INICIAIS,
@@ -60,7 +60,7 @@ export function VisaoEscolar({ acesso, aoVoltar }: Props) {
     return BIBLIOTECA_PROGRAMAS.slice(0, 2);
   }, [acesso.criancaId]);
 
-  const concluidas = sessoesCrianca.filter((s) => s.status === "concluida");
+  const concluidas = sessoesCrianca.filter((s) => s.status === "finalizada" || s.status === "assinada");
   const evolucoes = concluidas.filter((s) => s.evolucaoDiaria);
   const incidentes = concluidas.filter((s) => s.notaIncidente);
 

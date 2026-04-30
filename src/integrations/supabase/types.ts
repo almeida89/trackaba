@@ -708,8 +708,11 @@ export type Database = {
           acertos: number
           criado_em: string
           id: string
+          nivel: string
+          objetivo: string | null
           observacao: string | null
           programa_id: string
+          programa_nome: string | null
           sessao_id: string
           tentativas: number
         }
@@ -717,8 +720,11 @@ export type Database = {
           acertos?: number
           criado_em?: string
           id?: string
+          nivel?: string
+          objetivo?: string | null
           observacao?: string | null
           programa_id: string
+          programa_nome?: string | null
           sessao_id: string
           tentativas?: number
         }
@@ -726,8 +732,11 @@ export type Database = {
           acertos?: number
           criado_em?: string
           id?: string
+          nivel?: string
+          objetivo?: string | null
           observacao?: string | null
           programa_id?: string
+          programa_nome?: string | null
           sessao_id?: string
           tentativas?: number
         }
@@ -750,46 +759,76 @@ export type Database = {
       }
       sessoes: {
         Row: {
+          assinada_em: string | null
+          assinada_por: string | null
+          assinatura_hash: string | null
           atualizado_em: string
           criado_em: string
           crianca_id: string
           data_sessao: string
           duracao_minutos: number
+          evolucao_diaria: string | null
+          finalizada_em: string | null
           humor_final: number | null
           humor_inicial: number | null
           id: string
+          local: string
+          nota_incidente: string | null
           observacoes: string | null
+          reforcadores: Json
           resumo_familia: string | null
+          sala: string | null
+          status: Database["public"]["Enums"]["status_sessao"]
           terapeuta_id: string | null
           terapeuta_nome: string
           tipo: Database["public"]["Enums"]["tipo_sessao"]
         }
         Insert: {
+          assinada_em?: string | null
+          assinada_por?: string | null
+          assinatura_hash?: string | null
           atualizado_em?: string
           criado_em?: string
           crianca_id: string
           data_sessao: string
           duracao_minutos?: number
+          evolucao_diaria?: string | null
+          finalizada_em?: string | null
           humor_final?: number | null
           humor_inicial?: number | null
           id?: string
+          local?: string
+          nota_incidente?: string | null
           observacoes?: string | null
+          reforcadores?: Json
           resumo_familia?: string | null
+          sala?: string | null
+          status?: Database["public"]["Enums"]["status_sessao"]
           terapeuta_id?: string | null
           terapeuta_nome: string
           tipo?: Database["public"]["Enums"]["tipo_sessao"]
         }
         Update: {
+          assinada_em?: string | null
+          assinada_por?: string | null
+          assinatura_hash?: string | null
           atualizado_em?: string
           criado_em?: string
           crianca_id?: string
           data_sessao?: string
           duracao_minutos?: number
+          evolucao_diaria?: string | null
+          finalizada_em?: string | null
           humor_final?: number | null
           humor_inicial?: number | null
           id?: string
+          local?: string
+          nota_incidente?: string | null
           observacoes?: string | null
+          reforcadores?: Json
           resumo_familia?: string | null
+          sala?: string | null
+          status?: Database["public"]["Enums"]["status_sessao"]
           terapeuta_id?: string | null
           terapeuta_nome?: string
           tipo?: Database["public"]["Enums"]["tipo_sessao"]
@@ -852,6 +891,7 @@ export type Database = {
       }
     }
     Functions: {
+      assinar_sessao: { Args: { _sessao_id: string }; Returns: Json }
       consumir_rate_limit: {
         Args: {
           _bloqueio_minutos?: number
@@ -878,6 +918,7 @@ export type Database = {
           sessoes: number
         }[]
       }
+      finalizar_sessao: { Args: { _sessao_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -948,6 +989,12 @@ export type Database = {
         | "faltou"
       status_avaliacao: "agendada" | "em_andamento" | "concluida" | "cancelada"
       status_convite: "pendente" | "aceito" | "expirado" | "revogado"
+      status_sessao:
+        | "rascunho"
+        | "finalizada"
+        | "assinada"
+        | "cancelada"
+        | "falta"
       tipo_avaliacao:
         | "vbmapp"
         | "ablls"
@@ -1151,6 +1198,13 @@ export const Constants = {
       ],
       status_avaliacao: ["agendada", "em_andamento", "concluida", "cancelada"],
       status_convite: ["pendente", "aceito", "expirado", "revogado"],
+      status_sessao: [
+        "rascunho",
+        "finalizada",
+        "assinada",
+        "cancelada",
+        "falta",
+      ],
       tipo_avaliacao: [
         "vbmapp",
         "ablls",
