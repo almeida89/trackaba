@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
 import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
+import { SecaoFamiliarCrianca } from "@/componentes/familia/SecaoFamiliarCrianca";
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
@@ -116,6 +117,8 @@ export default function PastaCrianca() {
         return <ProgramasCrianca criancaId={id ?? "1"} criancaNome={nome} />;
       case "sessoes":
         return <SessoesCrianca criancaId={id ?? "1"} criancaNome={nome} />;
+      case "familiar":
+        return <SecaoFamiliarCrianca criancaId={id ?? "1"} criancaNome={nome} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
