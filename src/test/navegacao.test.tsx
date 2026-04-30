@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
+import type { AppRole } from "@/hooks/useUserRole";
+
+let papelMock: AppRole = "admin";
+const roleLabel: Record<AppRole, string> = {
+  admin: "Administrador",
+  psicologo: "Psicólogo",
+  coordenador: "Coordenador",
+  recepcionista: "Recepcionista",
+  familia: "Família",
+};
 
 // Mocks de hooks que dependem de Supabase / Auth
 vi.mock("@/hooks/useAuth", () => ({
@@ -13,16 +23,11 @@ vi.mock("@/hooks/useAuth", () => ({
 
 vi.mock("@/hooks/useUserRole", () => ({
   useUserRole: () => ({
-    papel: "admin",
-    perfil: { nome_completo: "Admin Teste" },
-    isAdmin: true,
+    papel: papelMock,
+    perfil: { nome_completo: `${roleLabel[papelMock]} Teste` },
+    isAdmin: papelMock === "admin",
   }),
-  rotuloPapel: {
-    admin: "Administrador",
-    psicologo: "Psicólogo",
-    terapeuta: "Terapeuta",
-    familia: "Família",
-  },
+  rotuloPapel: roleLabel,
 }));
 
 vi.mock("sonner", () => ({
@@ -56,7 +61,10 @@ const renderComRotas = (ui: React.ReactNode, inicial = "/") =>
   );
 
 describe("PainelPrincipal — botões de Acesso Rápido", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    papelMock = "admin";
+  });
 
   const atalhos: Array<[string, string]> = [
     ["Nova Criança", "/criancas"],
@@ -72,8 +80,13 @@ describe("PainelPrincipal — botões de Acesso Rápido", () => {
   });
 });
 
-describe("BarraLateral — links de navegação", () => {
-  const itens: Array<[string, string]> = [
+describe("BarraLateral — links de navegação por papel", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    papelMock = "admin";
+  });
+
+  const itensComuns: Array<[string, string]> = [
     ["Dashboard", "/"],
     ["Crianças", "/criancas"],
     ["Funcionários", "/funcionarios"],
@@ -86,14 +99,36 @@ describe("BarraLateral — links de navegação", () => {
     ["Relatórios", "/relatorios"],
     ["Gráficos", "/graficos"],
     ["Automações", "/automacoes"],
-    ["Usuários", "/usuarios"],
     ["Configurações", "/configuracoes"],
     ["Logs / Auditoria", "/logs"],
   ];
 
-  it.each(itens)("link '%s' aponta para %s", (label, rota) => {
+  it.each(["admin", "psicologo", "coordenador", "recepcionista", "familia"] as const)(
+    "exibe links comuns para %s",
+    (papel) => {
+      papelMock = papel;
+      renderComRotas(<BarraLateral />);
+
+      for (const [label, rota] of itensComuns) {
+        const link = screen.getByRole("link", { name: new RegExp(label, "i") });
+        expect(link.getAttribute("href")).toBe(rota);
+      }
+    }
+  );
+
+  it("exibe link 'Usuários' para admin", () => {
+    papelMock = "admin";
     renderComRotas(<BarraLateral />);
-    const link = screen.getByRole("link", { name: new RegExp(label, "i") });
-    expect(link.getAttribute("href")).toBe(rota);
+    const link = screen.getByRole("link", { name: /usuários/i });
+    expect(link.getAttribute("href")).toBe("/usuarios");
   });
+
+  it.each(["psicologo", "coordenador", "recepcionista", "familia"] as const)(
+    "não exibe link 'Usuários' para %s",
+    (papel) => {
+      papelMock = papel;
+      renderComRotas(<BarraLateral />);
+      expect(screen.queryByRole("link", { name: /usuários/i })).not.toBeInTheDocument();
+    }
+  );
 });
