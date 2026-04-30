@@ -1,13 +1,13 @@
 // Edge function: gestão de usuários por admin (criar / remover)
-// Validação de papel admin é feita no servidor antes de qualquer ação privilegiada.
+// Endurecida: CORS allowlist + validação senha forte + rate limit + auditoria.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import {
+  clienteAdmin,
+  corsHeadersPara,
+  ipDoCliente,
+  checarRateLimit,
+  jsonResp,
+} from "../_shared/seguranca.ts";
 
 type Papel = "admin" | "psicologo" | "coordenador" | "recepcionista" | "familia";
 
@@ -22,42 +22,58 @@ interface Body {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const admin = clienteAdmin();
+  const cors = await corsHeadersPara(req, admin);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const ANON = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
-    const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const ANON =
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
 
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader) {
-      return json({ erro: "Não autenticado." }, 401);
-    }
+    if (!authHeader) return jsonResp({ erro: "Não autenticado." }, 401, cors);
 
-    // Cliente com JWT do usuário, para descobrir quem chama
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData, error: userErr } = await userClient.auth.getUser();
-    if (userErr || !userData.user) return json({ erro: "Sessão inválida." }, 401);
+    if (userErr || !userData.user) return jsonResp({ erro: "Sessão inválida." }, 401, cors);
 
-    // Cliente admin (service role) para validar papel e executar ações privilegiadas
-    const admin = createClient(SUPABASE_URL, SERVICE);
+    // Rate limit por usuário admin: 30 ações/5 min
+    const ok = await checarRateLimit(admin, `user:${userData.user.id}`, "admin-users", {
+      maxTentativas: 30,
+      janelaMin: 5,
+      bloqueioMin: 10,
+    });
+    if (!ok) return jsonResp({ erro: "Muitas requisições, aguarde." }, 429, cors);
+
     const { data: ehAdmin, error: roleErr } = await admin.rpc("has_role", {
       _user_id: userData.user.id,
       _role: "admin",
     });
-    if (roleErr) return json({ erro: "Erro ao validar permissões." }, 500);
-    if (!ehAdmin) return json({ erro: "Acesso restrito a administradores." }, 403);
+    if (roleErr) return jsonResp({ erro: "Erro ao validar permissões." }, 500, cors);
+    if (!ehAdmin) return jsonResp({ erro: "Acesso restrito a administradores." }, 403, cors);
 
     const body = (await req.json()) as Body;
+    const ip = ipDoCliente(req);
 
     if (body.acao === "criar") {
       const { email, senha, nome_completo, telefone, papel } = body;
       if (!email || !senha || !nome_completo || !papel) {
-        return json({ erro: "Campos obrigatórios ausentes." }, 400);
+        return jsonResp({ erro: "Campos obrigatórios ausentes." }, 400, cors);
       }
-      if (senha.length < 8) return json({ erro: "A senha deve ter ao menos 8 caracteres." }, 400);
+
+      // Valida senha forte via banco
+      const { data: validacao } = await admin.rpc("validar_forca_senha", { _senha: senha });
+      if (validacao && validacao.valida === false) {
+        return jsonResp(
+          { erro: "Senha fraca", detalhes: validacao.erros },
+          400,
+          cors,
+        );
+      }
 
       const { data: criado, error: criarErr } = await admin.auth.admin.createUser({
         email,
@@ -67,45 +83,59 @@ Deno.serve(async (req) => {
       });
       if (criarErr || !criado.user) {
         console.error("Erro ao criar usuário:", criarErr);
-        return json({ erro: "Não foi possível criar o usuário." }, 400);
+        return jsonResp({ erro: "Não foi possível criar o usuário." }, 400, cors);
       }
 
-      // Trigger handle_new_user já criou profile e papel 'familia'. Ajustar papel se diferente.
       if (papel !== "familia") {
         await admin.from("user_roles").delete().eq("user_id", criado.user.id);
         const { error: insErr } = await admin
           .from("user_roles")
           .insert({ user_id: criado.user.id, role: papel });
-        if (insErr) return json({ erro: "Usuário criado, mas falha ao definir papel." }, 500);
+        if (insErr)
+          return jsonResp({ erro: "Usuário criado, mas falha ao definir papel." }, 500, cors);
       }
 
-      return json({ ok: true, user_id: criado.user.id });
+      await admin.from("logs_auditoria").insert({
+        user_id: userData.user.id,
+        user_email: userData.user.email,
+        acao: "criar",
+        entidade: "auth.users",
+        entidade_id: criado.user.id,
+        descricao: `Admin criou usuário ${email} com papel ${papel}`,
+        ip,
+      });
+
+      return jsonResp({ ok: true, user_id: criado.user.id }, 200, cors);
     }
 
     if (body.acao === "remover") {
       const { user_id } = body;
-      if (!user_id) return json({ erro: "user_id obrigatório." }, 400);
-      if (user_id === userData.user.id) {
-        return json({ erro: "Você não pode remover a si mesmo." }, 400);
-      }
+      if (!user_id) return jsonResp({ erro: "user_id obrigatório." }, 400, cors);
+      if (user_id === userData.user.id)
+        return jsonResp({ erro: "Você não pode remover a si mesmo." }, 400, cors);
+
       const { error: delErr } = await admin.auth.admin.deleteUser(user_id);
       if (delErr) {
         console.error("Erro ao remover usuário:", delErr);
-        return json({ erro: "Não foi possível remover o usuário." }, 400);
+        return jsonResp({ erro: "Não foi possível remover o usuário." }, 400, cors);
       }
-      return json({ ok: true });
+
+      await admin.from("logs_auditoria").insert({
+        user_id: userData.user.id,
+        user_email: userData.user.email,
+        acao: "excluir",
+        entidade: "auth.users",
+        entidade_id: user_id,
+        descricao: "Admin removeu usuário",
+        ip,
+      });
+
+      return jsonResp({ ok: true }, 200, cors);
     }
 
-    return json({ erro: "Ação inválida." }, 400);
+    return jsonResp({ erro: "Ação inválida." }, 400, cors);
   } catch (e) {
     console.error("Erro não tratado em admin-users:", e);
-    return json({ erro: "Erro interno. Tente novamente." }, 500);
+    return jsonResp({ erro: "Erro interno. Tente novamente." }, 500, cors);
   }
 });
-
-function json(payload: unknown, status = 200) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}

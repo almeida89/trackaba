@@ -2,3 +2,6 @@ project_id = "lvdbihludlecorggtgxi"
 
 [functions.validar-token-escola]
 verify_jwt = false
+
+[functions.convidar-usuario]
+verify_jwt = false
