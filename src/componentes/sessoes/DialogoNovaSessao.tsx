@@ -1,53 +1,86 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CRIANCAS_DISPONIVEIS, PROFISSIONAIS_DISPONIVEIS } from "./dadosSessoes";
 import { Sessao } from "./tiposSessoes";
 
 interface Props {
   aberto: boolean;
   aoFechar: () => void;
-  aoCriar: (s: Sessao) => void;
+  aoCriar: (entrada: {
+    criancaId: string;
+    criancaNome: string;
+    terapeutaId?: string | null;
+    terapeutaNome: string;
+    data: string;
+    horaInicio: string;
+    horaFim: string;
+    tipo: Sessao["tipo"];
+    local: Sessao["local"];
+    sala?: string;
+  }) => Promise<void> | void;
+  criancaPreSelecionadaId?: string;
+  criancaPreSelecionadaNome?: string;
 }
 
-export function DialogoNovaSessao({ aberto, aoFechar, aoCriar }: Props) {
-  const [criancaId, setCriancaId] = useState("1");
-  const [profissionalId, setProfissionalId] = useState("p1");
+export function DialogoNovaSessao({
+  aberto,
+  aoFechar,
+  aoCriar,
+  criancaPreSelecionadaId,
+  criancaPreSelecionadaNome,
+}: Props) {
+  const [criancas, setCriancas] = useState<{ id: string; nome: string }[]>([]);
+  const [funcionarios, setFuncionarios] = useState<{ id: string; nome: string }[]>([]);
+  const [criancaId, setCriancaId] = useState(criancaPreSelecionadaId ?? "");
+  const [funcionarioId, setFuncionarioId] = useState("");
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
   const [horaInicio, setHoraInicio] = useState("09:00");
   const [horaFim, setHoraFim] = useState("09:50");
   const [tipo, setTipo] = useState<Sessao["tipo"]>("ABA");
   const [local, setLocal] = useState<Sessao["local"]>("clinica");
   const [sala, setSala] = useState("");
+  const [salvando, setSalvando] = useState(false);
 
-  const criar = () => {
-    const crianca = CRIANCAS_DISPONIVEIS.find((c) => c.id === criancaId)!;
-    const prof = PROFISSIONAIS_DISPONIVEIS.find((p) => p.id === profissionalId)!;
-    const [hi, mi] = horaInicio.split(":").map(Number);
-    const [hf, mf] = horaFim.split(":").map(Number);
-    const duracaoMin = hf * 60 + mf - (hi * 60 + mi);
-    aoCriar({
-      id: crypto.randomUUID(),
+  useEffect(() => {
+    if (!aberto) return;
+    (async () => {
+      const [{ data: cs }, { data: fs }] = await Promise.all([
+        supabase.from("criancas").select("id, nome").eq("ativo", true).order("nome"),
+        supabase.from("funcionarios").select("id, nome_completo").eq("ativo", true).order("nome_completo"),
+      ]);
+      setCriancas((cs ?? []).map((c: any) => ({ id: c.id, nome: c.nome })));
+      setFuncionarios((fs ?? []).map((f: any) => ({ id: f.id, nome: f.nome_completo })));
+      if (criancaPreSelecionadaId) setCriancaId(criancaPreSelecionadaId);
+      else if (cs && cs[0]) setCriancaId((cs[0] as any).id);
+      if (fs && fs[0]) setFuncionarioId((fs[0] as any).id);
+    })();
+  }, [aberto, criancaPreSelecionadaId]);
+
+  const criar = async () => {
+    if (!criancaId) return toast.error("Selecione uma criança");
+    if (!funcionarioId) return toast.error("Selecione um profissional");
+    const crianca = criancas.find((c) => c.id === criancaId);
+    const prof = funcionarios.find((f) => f.id === funcionarioId);
+    if (!crianca || !prof) return;
+    setSalvando(true);
+    await aoCriar({
       criancaId,
-      criancaNome: crianca.nome,
-      profissionalId,
-      profissionalNome: prof.nome,
+      criancaNome: criancaPreSelecionadaNome ?? crianca.nome,
+      terapeutaId: null,
+      terapeutaNome: prof.nome,
       data,
       horaInicio,
       horaFim,
-      duracaoMin,
       tipo,
       local,
       sala: sala || undefined,
-      status: "agendada",
-      registros: [],
-      narrativaAbc: [],
-      reforcadores: [],
-      anexos: [],
     });
+    setSalvando(false);
     aoFechar();
   };
 
@@ -58,24 +91,26 @@ export function DialogoNovaSessao({ aberto, aoFechar, aoCriar }: Props) {
           <DialogTitle>Nova sessão</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="md:col-span-2">
-            <Label>Criança</Label>
-            <Select value={criancaId} onValueChange={setCriancaId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {CRIANCAS_DISPONIVEIS.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!criancaPreSelecionadaId && (
+            <div className="md:col-span-2">
+              <Label>Criança</Label>
+              <Select value={criancaId} onValueChange={setCriancaId}>
+                <SelectTrigger><SelectValue placeholder="Selecionar criança" /></SelectTrigger>
+                <SelectContent>
+                  {criancas.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="md:col-span-2">
             <Label>Profissional</Label>
-            <Select value={profissionalId} onValueChange={setProfissionalId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select value={funcionarioId} onValueChange={setFuncionarioId}>
+              <SelectTrigger><SelectValue placeholder="Selecionar profissional" /></SelectTrigger>
               <SelectContent>
-                {PROFISSIONAIS_DISPONIVEIS.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>
+                {funcionarios.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -124,7 +159,9 @@ export function DialogoNovaSessao({ aberto, aoFechar, aoCriar }: Props) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={aoFechar}>Cancelar</Button>
-          <Button onClick={criar}>Criar sessão</Button>
+          <Button onClick={criar} disabled={salvando}>
+            {salvando ? "Criando..." : "Criar sessão"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
