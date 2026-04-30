@@ -23,28 +23,66 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 function traduzirErro(msg: string | undefined): string {
   if (!msg) return "Erro desconhecido. Tente novamente.";
-  const m = msg.toLowerCase();
-  if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
-  if (m.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada (e a pasta de spam).";
-  if (m.includes("user already registered")) return "Este e-mail já está cadastrado. Tente entrar ou recuperar a senha.";
-  if (m.includes("password should be at least")) return "A senha deve ter pelo menos 8 caracteres.";
-  if (m.includes("rate limit") || m.includes("too many requests")) return "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.";
-  if (m.includes("pwned") || m.includes("compromised") || m.includes("leaked"))
-    return "Esta senha apareceu em vazamentos públicos de dados. Escolha uma senha diferente para sua segurança.";
+  const m = msg.toLowerCase().trim();
+
+  // Senha fraca / vazada (verificar ANTES de outras regras de senha)
   if (
     m.includes("known to be weak") ||
     m.includes("easy to guess") ||
     m.includes("weak password") ||
     m.includes("password is too weak") ||
-    (m.includes("weak") && m.includes("password"))
-  )
+    m.includes("password is known to be weak") ||
+    (m.includes("weak") && m.includes("password")) ||
+    (m.includes("guess") && m.includes("password"))
+  ) {
     return "Senha muito fraca e fácil de adivinhar. Escolha outra com ao menos 8 caracteres, misturando maiúsculas, minúsculas, números e símbolos.";
+  }
+  if (
+    m.includes("pwned") ||
+    m.includes("compromised") ||
+    m.includes("leaked") ||
+    m.includes("data breach") ||
+    m.includes("have i been pwned") ||
+    m.includes("hibp")
+  ) {
+    return "Esta senha apareceu em vazamentos públicos de dados. Escolha uma senha diferente para sua segurança.";
+  }
+
+  // Login / cadastro
+  if (m.includes("invalid login credentials") || m.includes("invalid credentials"))
+    return "E-mail ou senha incorretos.";
+  if (m.includes("email not confirmed") || m.includes("email address not confirmed"))
+    return "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada (e a pasta de spam).";
+  if (m.includes("user already registered") || m.includes("already been registered") || m.includes("already exists"))
+    return "Este e-mail já está cadastrado. Tente entrar ou recuperar a senha.";
+  if (m.includes("signup") && m.includes("disabled"))
+    return "Cadastros estão temporariamente desativados. Tente novamente mais tarde.";
+
+  // Regras de tamanho/complexidade
+  if (m.includes("password should be at least") || m.includes("password is too short") || m.includes("at least 8"))
+    return "A senha deve ter pelo menos 8 caracteres.";
+  if (m.includes("password should contain") || m.includes("password must contain"))
+    return "A senha não atende aos requisitos. Use letras maiúsculas, minúsculas, números e símbolos.";
+
+  // Limites e rede
+  if (m.includes("rate limit") || m.includes("too many requests") || m.includes("over_request_rate_limit"))
+    return "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.";
+  if (m.includes("network") || m.includes("failed to fetch"))
+    return "Falha de conexão. Verifique sua internet e tente novamente.";
+
+  // Atualização de senha
   if (m.includes("same as the old password") || m.includes("new password should be different"))
     return "A nova senha deve ser diferente da anterior.";
-  if (m.includes("token has expired") || m.includes("invalid token") || m.includes("expired"))
+
+  // Tokens
+  if (m.includes("token has expired") || m.includes("invalid token") || m.includes("otp expired") || m.includes("expired"))
     return "Link expirado ou inválido. Solicite um novo e-mail de recuperação.";
+
+  // Usuário / e-mail
   if (m.includes("user not found")) return "Não encontramos uma conta com esse e-mail.";
-  if (m.includes("email") && m.includes("invalid")) return "E-mail inválido.";
+  if (m.includes("email") && (m.includes("invalid") || m.includes("not valid")))
+    return "E-mail inválido.";
+
   return msg;
 }
 
