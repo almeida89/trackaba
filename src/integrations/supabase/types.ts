@@ -812,6 +812,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      origem_permitida: { Args: { _origem: string }; Returns: boolean }
       tem_acesso_crianca: {
         Args: { _crianca_id: string; _user_id: string }
         Returns: boolean
