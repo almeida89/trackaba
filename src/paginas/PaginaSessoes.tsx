@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Plus, Search, Calendar as CalendarIcon, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,12 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CartaoSessao } from "@/componentes/sessoes/CartaoSessao";
 import { DetalhesSessao } from "@/componentes/sessoes/DetalhesSessao";
 import { DialogoNovaSessao } from "@/componentes/sessoes/DialogoNovaSessao";
-import { Sessao } from "@/componentes/sessoes/tiposSessoes";
 import { useSessoesBanco } from "@/hooks/useSessoesBanco";
 
 export default function PaginaSessoes() {
-  const { sessoes: sessoesBanco, carregando } = useSessoesBanco();
-  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const { sessoes, carregando, criarSessao, salvarSessao, finalizarSessao, assinarSessao } = useSessoesBanco();
   const [selecionadaId, setSelecionadaId] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [filtroCrianca, setFiltroCrianca] = useState("todas");
@@ -21,17 +18,16 @@ export default function PaginaSessoes() {
   const [dialogoAberto, setDialogoAberto] = useState(false);
 
   useEffect(() => {
-    setSessoes(sessoesBanco);
-    if (sessoesBanco.length > 0 && !selecionadaId) {
-      setSelecionadaId(sessoesBanco[0].id);
+    if (sessoes.length > 0 && !sessoes.find((s) => s.id === selecionadaId)) {
+      setSelecionadaId(sessoes[0].id);
     }
-  }, [sessoesBanco, selecionadaId]);
+  }, [sessoes, selecionadaId]);
 
   const criancasDisponiveis = useMemo(() => {
     const map = new Map<string, string>();
-    sessoesBanco.forEach((s) => map.set(s.criancaId, s.criancaNome));
+    sessoes.forEach((s) => map.set(s.criancaId, s.criancaNome));
     return Array.from(map, ([id, nome]) => ({ id, nome }));
-  }, [sessoesBanco]);
+  }, [sessoes]);
 
   const sessoesFiltradas = useMemo(() => {
     return sessoes
@@ -42,28 +38,16 @@ export default function PaginaSessoes() {
           !busca.trim() ||
           s.criancaNome.toLowerCase().includes(busca.toLowerCase()) ||
           s.profissionalNome.toLowerCase().includes(busca.toLowerCase())
-      )
-      .sort((a, b) => (b.data + b.horaInicio).localeCompare(a.data + a.horaInicio));
+      );
   }, [sessoes, busca, filtroCrianca, filtroStatus]);
 
   const selecionada = sessoes.find((s) => s.id === selecionadaId) ?? sessoesFiltradas[0];
 
-  const salvar = (atualizada: Sessao) => {
-    setSessoes((prev) => prev.map((s) => (s.id === atualizada.id ? atualizada : s)));
-    toast.success("Sessão atualizada");
-  };
-
-  const criar = (nova: Sessao) => {
-    setSessoes((prev) => [nova, ...prev]);
-    setSelecionadaId(nova.id);
-    toast.success("Sessão criada");
-  };
-
   const totais = useMemo(
     () => ({
       hoje: sessoes.filter((s) => s.data === new Date().toISOString().split("T")[0]).length,
-      andamento: sessoes.filter((s) => s.status === "em_andamento").length,
-      concluidas: sessoes.filter((s) => s.status === "concluida").length,
+      rascunho: sessoes.filter((s) => s.status === "rascunho").length,
+      finalizadas: sessoes.filter((s) => s.status === "finalizada" || s.status === "assinada").length,
       incidentes: sessoes.filter((s) => s.notaIncidente).length,
     }),
     [sessoes]
@@ -75,7 +59,7 @@ export default function PaginaSessoes() {
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground">Sessões</h1>
           <p className="text-sm text-muted-foreground">
-            Registro clínico completo: notas, programas, ABC e reforçadores.
+            Registro clínico completo: notas, programas, ABC e assinatura digital.
           </p>
         </div>
         <Button onClick={() => setDialogoAberto(true)} className="gap-2">
@@ -89,12 +73,12 @@ export default function PaginaSessoes() {
           <p className="text-2xl font-bold text-foreground">{totais.hoje}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Em andamento</p>
-          <p className="text-2xl font-bold text-primary">{totais.andamento}</p>
+          <p className="text-xs text-muted-foreground">Em rascunho</p>
+          <p className="text-2xl font-bold text-status-warning">{totais.rascunho}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Concluídas</p>
-          <p className="text-2xl font-bold text-status-success">{totais.concluidas}</p>
+          <p className="text-xs text-muted-foreground">Finalizadas</p>
+          <p className="text-2xl font-bold text-status-success">{totais.finalizadas}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs text-muted-foreground">Com incidente</p>
@@ -127,9 +111,9 @@ export default function PaginaSessoes() {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos status</SelectItem>
-                <SelectItem value="agendada">Agendada</SelectItem>
-                <SelectItem value="em_andamento">Em andamento</SelectItem>
-                <SelectItem value="concluida">Concluída</SelectItem>
+                <SelectItem value="rascunho">Rascunho</SelectItem>
+                <SelectItem value="finalizada">Finalizada</SelectItem>
+                <SelectItem value="assinada">Assinada</SelectItem>
                 <SelectItem value="cancelada">Cancelada</SelectItem>
                 <SelectItem value="falta">Falta</SelectItem>
               </SelectContent>
@@ -161,7 +145,13 @@ export default function PaginaSessoes() {
 
         <div>
           {selecionada ? (
-            <DetalhesSessao key={selecionada.id} sessao={selecionada} aoSalvar={salvar} />
+            <DetalhesSessao
+              key={selecionada.id}
+              sessao={selecionada}
+              aoSalvar={salvarSessao}
+              aoFinalizar={finalizarSessao}
+              aoAssinar={assinarSessao}
+            />
           ) : (
             <Card className="p-12 text-center border-dashed">
               <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
@@ -174,7 +164,10 @@ export default function PaginaSessoes() {
       <DialogoNovaSessao
         aberto={dialogoAberto}
         aoFechar={() => setDialogoAberto(false)}
-        aoCriar={criar}
+        aoCriar={async (entrada) => {
+          const id = await criarSessao(entrada);
+          if (id) setSelecionadaId(id);
+        }}
       />
     </div>
   );

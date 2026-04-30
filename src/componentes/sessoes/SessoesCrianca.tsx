@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
-import { Play, Plus, ClipboardList } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, ClipboardList, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CartaoSessao } from "./CartaoSessao";
 import { DetalhesSessao } from "./DetalhesSessao";
 import { DialogoNovaSessao } from "./DialogoNovaSessao";
-import { SESSOES_INICIAIS } from "./dadosSessoes";
-import { Sessao } from "./tiposSessoes";
+import { useSessoesBanco } from "@/hooks/useSessoesBanco";
 
 interface Props {
   criancaId: string;
@@ -15,60 +13,17 @@ interface Props {
 }
 
 export function SessoesCrianca({ criancaId, criancaNome }: Props) {
-  const [sessoes, setSessoes] = useState<Sessao[]>(SESSOES_INICIAIS);
+  const { sessoes, carregando, criarSessao, salvarSessao, finalizarSessao, assinarSessao } = useSessoesBanco();
   const [dialogoAberto, setDialogoAberto] = useState(false);
+  const [selecionadaId, setSelecionadaId] = useState<string>("");
 
   const sessoesDaCrianca = useMemo(
-    () =>
-      sessoes
-        .filter((s) => s.criancaId === criancaId)
-        .sort((a, b) => (b.data + b.horaInicio).localeCompare(a.data + a.horaInicio)),
+    () => sessoes.filter((s) => s.criancaId === criancaId),
     [sessoes, criancaId]
   );
 
-  const [selecionadaId, setSelecionadaId] = useState<string>(sessoesDaCrianca[0]?.id ?? "");
   const selecionada =
     sessoesDaCrianca.find((s) => s.id === selecionadaId) ?? sessoesDaCrianca[0];
-
-  const salvar = (atualizada: Sessao) => {
-    setSessoes((prev) => prev.map((s) => (s.id === atualizada.id ? atualizada : s)));
-    toast.success("Sessão atualizada");
-  };
-
-  const criar = (nova: Sessao) => {
-    const sessaoComCrianca: Sessao = { ...nova, criancaId, criancaNome };
-    setSessoes((prev) => [sessaoComCrianca, ...prev]);
-    setSelecionadaId(sessaoComCrianca.id);
-    toast.success("Sessão criada");
-  };
-
-  const iniciarSessaoAgora = () => {
-    const agora = new Date();
-    const horaInicio = agora.toTimeString().slice(0, 5);
-    const fim = new Date(agora.getTime() + 50 * 60000);
-    const horaFim = fim.toTimeString().slice(0, 5);
-    const nova: Sessao = {
-      id: `s${Date.now()}`,
-      criancaId,
-      criancaNome,
-      profissionalId: "p1",
-      profissionalNome: "Dra. Ana Souza",
-      data: agora.toISOString().split("T")[0],
-      horaInicio,
-      horaFim,
-      duracaoMin: 50,
-      tipo: "ABA",
-      local: "clinica",
-      status: "em_andamento",
-      registros: [],
-      narrativaAbc: [],
-      reforcadores: [],
-      anexos: [],
-    };
-    setSessoes((prev) => [nova, ...prev]);
-    setSelecionadaId(nova.id);
-    toast.success("Sessão iniciada agora");
-  };
 
   return (
     <div className="space-y-4">
@@ -81,28 +36,23 @@ export function SessoesCrianca({ criancaId, criancaNome }: Props) {
             {sessoesDaCrianca.length} sessão(ões) registrada(s)
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setDialogoAberto(true)}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" /> Agendar
-          </Button>
-          <Button onClick={iniciarSessaoAgora} className="gap-2">
-            <Play className="h-4 w-4" /> Iniciar sessão
-          </Button>
-        </div>
+        <Button onClick={() => setDialogoAberto(true)} className="gap-2">
+          <Plus className="h-4 w-4" /> Nova sessão
+        </Button>
       </div>
 
-      {sessoesDaCrianca.length === 0 ? (
+      {carregando ? (
+        <Card className="p-12 text-center border-dashed">
+          <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
+        </Card>
+      ) : sessoesDaCrianca.length === 0 ? (
         <Card className="p-12 text-center border-dashed">
           <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
           <p className="text-muted-foreground mb-4">
             Nenhuma sessão registrada para esta criança.
           </p>
-          <Button onClick={iniciarSessaoAgora} className="gap-2">
-            <Play className="h-4 w-4" /> Iniciar primeira sessão
+          <Button onClick={() => setDialogoAberto(true)} className="gap-2">
+            <Plus className="h-4 w-4" /> Criar primeira sessão
           </Button>
         </Card>
       ) : (
@@ -119,7 +69,13 @@ export function SessoesCrianca({ criancaId, criancaNome }: Props) {
           </div>
           <div>
             {selecionada && (
-              <DetalhesSessao key={selecionada.id} sessao={selecionada} aoSalvar={salvar} />
+              <DetalhesSessao
+                key={selecionada.id}
+                sessao={selecionada}
+                aoSalvar={salvarSessao}
+                aoFinalizar={finalizarSessao}
+                aoAssinar={assinarSessao}
+              />
             )}
           </div>
         </div>
@@ -128,7 +84,12 @@ export function SessoesCrianca({ criancaId, criancaNome }: Props) {
       <DialogoNovaSessao
         aberto={dialogoAberto}
         aoFechar={() => setDialogoAberto(false)}
-        aoCriar={criar}
+        criancaPreSelecionadaId={criancaId}
+        criancaPreSelecionadaNome={criancaNome}
+        aoCriar={async (entrada) => {
+          const id = await criarSessao(entrada);
+          if (id) setSelecionadaId(id);
+        }}
       />
     </div>
   );
