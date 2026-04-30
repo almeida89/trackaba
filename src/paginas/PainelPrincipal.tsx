@@ -8,6 +8,7 @@ import {
   AlertCircle,
   UserCheck,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
 import {
   LineChart,
