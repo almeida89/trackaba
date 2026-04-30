@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { SESSOES_INICIAIS } from "@/componentes/sessoes/dadosSessoes";
+const SESSOES_INICIAIS: any[] = []; // TODO: integrar com sessões reais do banco
 import { PROGRAMAS_CRIANCA_INICIAIS } from "@/componentes/programas/dadosProgramas";
 
 export type TipoRelatorio =
@@ -105,7 +105,7 @@ export function gerarRelatorioPDF(opcoes: OpcoesRelatorio) {
   const sessoes = SESSOES_INICIAIS.filter(
     (s) => s.criancaId === opcoes.criancaId && dentroPeriodo(s.data)
   ).sort((a, b) => a.data.localeCompare(b.data));
-  const concluidas = sessoes.filter((s) => s.status === "concluida");
+  const concluidas = sessoes.filter((s) => s.status === "finalizada" || s.status === "assinada");
   const evolucoes = concluidas.filter((s) => s.evolucaoDiaria);
   const incidentes = concluidas.filter((s) => s.notaIncidente);
   const programas = PROGRAMAS_CRIANCA_INICIAIS.filter(

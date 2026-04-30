@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { AcessoEscola } from "./tiposEscola";
-import { SESSOES_INICIAIS } from "@/componentes/sessoes/dadosSessoes";
+const SESSOES_INICIAIS: any[] = []; // TODO: integrar com sessões reais do banco
 import {
   BIBLIOTECA_PROGRAMAS,
   PROGRAMAS_CRIANCA_INICIAIS,
@@ -93,7 +93,7 @@ export function gerarRelatorioEscolaPDF(acesso: AcessoEscola) {
   ).sort((a, b) =>
     (b.data + b.horaInicio).localeCompare(a.data + a.horaInicio)
   );
-  const concluidas = sessoes.filter((s) => s.status === "concluida");
+  const concluidas = sessoes.filter((s) => s.status === "finalizada" || s.status === "assinada");
   const evolucoes = concluidas.filter((s) => s.evolucaoDiaria);
   const incidentes = concluidas.filter((s) => s.notaIncidente);
 
