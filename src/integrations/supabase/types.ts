@@ -862,6 +862,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      dashboard_distribuicao_niveis: {
+        Args: never
+        Returns: {
+          nivel: string
+          total: number
+        }[]
+      }
+      dashboard_estatisticas: { Args: never; Returns: Json }
+      dashboard_serie_mensal: {
+        Args: never
+        Returns: {
+          avaliacoes: number
+          mes_inicio: string
+          sessoes: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
