@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -15,7 +15,10 @@ import {
   History,
   UserCheck,
   Loader2,
+  Camera,
+  Baby,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
