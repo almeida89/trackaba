@@ -285,12 +285,8 @@ export function SecaoFamiliarCrianca({ criancaId, criancaNome }: Props) {
               icone={Users}
               titulo="Nenhum familiar cadastrado"
               descricao="Adicione o responsável principal e demais familiares vinculados a esta criança."
-              acao={
-                <Button onClick={abrirNovo} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Cadastrar familiar
-                </Button>
-              }
+              acaoTexto="Cadastrar familiar"
+              aoClicar={abrirNovo}
             />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
