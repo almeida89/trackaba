@@ -145,21 +145,34 @@ export function BarraLateral() {
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-          {itensVisiveis.map((item) => (
-            <NavLink
-              key={item.url}
-              to={item.url}
-              end={item.url === "/"}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                recolhida && "justify-center px-0"
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+          {secoesVisiveis.map((secao) => (
+            <div key={secao.titulo} className="space-y-0.5">
+              {!recolhida && (
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                  {secao.titulo}
+                </p>
               )}
-              activeClassName="bg-sidebar-accent text-sidebar-primary"
-            >
-              <item.icone className="h-[18px] w-[18px] shrink-0" />
-              {!recolhida && <span>{item.titulo}</span>}
-            </NavLink>
+              {recolhida && (
+                <div className="mx-3 my-2 border-t border-sidebar-border/60" />
+              )}
+              {secao.itens.map((item) => (
+                <NavLink
+                  key={item.url}
+                  to={item.url}
+                  end={item.url === "/"}
+                  title={recolhida ? item.titulo : undefined}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    recolhida && "justify-center px-0"
+                  )}
+                  activeClassName="bg-sidebar-accent text-sidebar-primary"
+                >
+                  <item.icone className="h-[18px] w-[18px] shrink-0" />
+                  {!recolhida && <span>{item.titulo}</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
