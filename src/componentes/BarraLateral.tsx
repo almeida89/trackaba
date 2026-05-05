@@ -35,22 +35,52 @@ interface ItemMenu {
   somenteAdmin?: boolean;
 }
 
-const itensMenu: ItemMenu[] = [
-  { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
-  { titulo: "Crianças", url: "/criancas", icone: Baby },
-  { titulo: "Funcionários", url: "/funcionarios", icone: Users },
-  { titulo: "Sessões", url: "/sessoes", icone: ClipboardList },
-  { titulo: "Programas", url: "/programas", icone: BookOpen },
-  { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck },
-  { titulo: "Agenda", url: "/agenda", icone: Calendar },
-  { titulo: "Escola", url: "/escola", icone: GraduationCap },
-  { titulo: "Família", url: "/familia", icone: Heart },
-  { titulo: "Relatórios", url: "/relatorios", icone: FileText },
-  { titulo: "Gráficos", url: "/graficos", icone: BarChart3 },
-  { titulo: "Automações", url: "/automacoes", icone: Zap },
-  { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
-  { titulo: "Configurações", url: "/configuracoes", icone: Settings },
-  { titulo: "Logs / Auditoria", url: "/logs", icone: Shield },
+interface SecaoMenu {
+  titulo: string;
+  itens: ItemMenu[];
+}
+
+const secoesMenu: SecaoMenu[] = [
+  {
+    titulo: "Geral",
+    itens: [
+      { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
+    ],
+  },
+  {
+    titulo: "Clínico",
+    itens: [
+      { titulo: "Crianças", url: "/criancas", icone: Baby },
+      { titulo: "Sessões", url: "/sessoes", icone: ClipboardList },
+      { titulo: "Programas", url: "/programas", icone: BookOpen },
+      { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck },
+      { titulo: "Agenda", url: "/agenda", icone: Calendar },
+    ],
+  },
+  {
+    titulo: "Relacionamento",
+    itens: [
+      { titulo: "Família", url: "/familia", icone: Heart },
+      { titulo: "Escola", url: "/escola", icone: GraduationCap },
+    ],
+  },
+  {
+    titulo: "Análise",
+    itens: [
+      { titulo: "Relatórios", url: "/relatorios", icone: FileText },
+      { titulo: "Gráficos", url: "/graficos", icone: BarChart3 },
+    ],
+  },
+  {
+    titulo: "Administração",
+    itens: [
+      { titulo: "Funcionários", url: "/funcionarios", icone: Users },
+      { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
+      { titulo: "Automações", url: "/automacoes", icone: Zap },
+      { titulo: "Configurações", url: "/configuracoes", icone: Settings },
+      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield },
+    ],
+  },
 ];
 
 export function BarraLateral() {
