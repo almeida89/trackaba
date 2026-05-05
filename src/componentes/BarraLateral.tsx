@@ -87,7 +87,9 @@ export function BarraLateral() {
   const [recolhida, setRecolhida] = useState(false);
   const { user, sair } = useAuth();
   const { papel, perfil, isAdmin } = useUserRole();
-  const itensVisiveis = itensMenu.filter((i) => !i.somenteAdmin || isAdmin);
+  const secoesVisiveis = secoesMenu
+    .map((s) => ({ ...s, itens: s.itens.filter((i) => !i.somenteAdmin || isAdmin) }))
+    .filter((s) => s.itens.length > 0);
   const navigate = useNavigate();
 
   const aoSair = async () => {
