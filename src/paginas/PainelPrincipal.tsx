@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Baby,
   ClipboardList,
   FileCheck,
   Calendar,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
+import { useUserRole, rotuloPapel } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   LineChart,
