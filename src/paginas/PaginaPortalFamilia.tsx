@@ -145,41 +145,47 @@ export default function PaginaPortalFamilia() {
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Card da criança */}
-        <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+        <Card className="p-6 bg-gradient-to-br from-primary/10 via-card to-accent/10 border-primary/20 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center text-2xl font-heading font-bold">
+            <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center text-2xl font-heading font-bold ring-4 ring-background shadow-md">
               {crianca.nome.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-heading font-bold text-foreground truncate">{crianca.nome}</h2>
-              <p className="text-sm text-muted-foreground">{idade} anos · {crianca.diagnostico ?? "—"}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Acompanhando</p>
+              <h2 className="text-2xl font-heading font-bold text-foreground truncate leading-tight">{crianca.nome}</h2>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <Badge variant="secondary" className="text-xs">{idade} anos</Badge>
+                {crianca.diagnostico && (
+                  <Badge variant="outline" className="text-xs">{crianca.diagnostico}</Badge>
+                )}
+              </div>
             </div>
           </div>
         </Card>
 
         {/* Estatísticas amigáveis */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="p-5">
+          <Card className="p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Calendar className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-2xl font-heading font-bold text-foreground">{sessoes.length}</p>
-                <p className="text-xs text-muted-foreground">Últimas sessões</p>
+              <div className="min-w-0">
+                <p className="text-2xl font-heading font-bold text-foreground leading-none">{sessoes.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">Últimas sessões</p>
               </div>
             </div>
           </Card>
-          <Card className="p-5">
+          <Card className="p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-status-success/10 text-status-success flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-status-success/10 text-status-success flex items-center justify-center">
                 <TrendingUp className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-2xl font-heading font-bold text-foreground">
-                  {contagemProgramas.avancados}/{contagemProgramas.total}
+              <div className="min-w-0">
+                <p className="text-2xl font-heading font-bold text-foreground leading-none">
+                  {contagemProgramas.avancados}<span className="text-base text-muted-foreground font-medium">/{contagemProgramas.total}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">Programas avançados</p>
+                <p className="text-xs text-muted-foreground mt-1">Programas avançados</p>
               </div>
             </div>
           </Card>
