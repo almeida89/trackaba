@@ -39,6 +39,27 @@ const criancasDisponiveis = [
   { id: "6", nome: "Sofia Almeida" },
 ];
 
+
+const formatarCPF = (valor: string) => {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+  return digitos
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+};
+
+const formatarTelefone = (valor: string) => {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+  if (digitos.length <= 10) {
+    return digitos
+      .replace(/(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  }
+  return digitos
+    .replace(/(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2");
+};
+
 const vazio = (): MembroFamilia => ({
   id: `fa${Date.now()}`,
   nome: "",
@@ -186,7 +207,8 @@ export function DialogoMembroFamilia({
             <Label>Telefone *</Label>
             <Input
               value={form.telefone}
-              onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+              onChange={(e) => setForm({ ...form, telefone: formatarTelefone(e.target.value) })}
+              maxLength={15}
               placeholder="(11) 99999-0000"
             />
           </div>
@@ -195,7 +217,8 @@ export function DialogoMembroFamilia({
             <Label>CPF</Label>
             <Input
               value={form.cpf || ""}
-              onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+              onChange={(e) => setForm({ ...form, cpf: formatarCPF(e.target.value) })}
+              maxLength={14}
               placeholder="000.000.000-00"
             />
           </div>
