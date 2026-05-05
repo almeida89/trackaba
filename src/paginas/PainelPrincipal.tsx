@@ -43,18 +43,34 @@ export default function PainelPrincipal() {
   const serie = useSerieMensalPainel();
   const distribuicao = useDistribuicaoNiveis();
   const atividades = useAtividadesRecentes(8);
+  const { papel, perfil } = useUserRole();
+  const navigate = useNavigate();
 
   const [acao, setAcao] = useState<AcaoRapida | null>(null);
 
   const e = stats.data;
+  const primeiroNome = (perfil?.nome_completo ?? "").split(" ")[0];
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold text-foreground">Painel Principal</h1>
-        <p className="text-muted-foreground text-sm mt-1 capitalize">
-          Visão geral da clínica — {MES_ATUAL}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-heading font-bold text-foreground">
+              {saudacao}{primeiroNome ? `, ${primeiroNome}` : ""} 👋
+            </h1>
+            {papel && (
+              <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 text-primary text-[11px] font-medium px-2 py-0.5 uppercase tracking-wide">
+                {rotuloPapel[papel]}
+              </span>
+            )}
+          </div>
+          <p className="text-muted-foreground text-sm mt-1 capitalize">
+            Visão geral da clínica — {MES_ATUAL}
+          </p>
+        </div>
       </div>
 
       {/* Stats grid */}
