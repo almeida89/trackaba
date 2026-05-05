@@ -145,41 +145,47 @@ export default function PaginaPortalFamilia() {
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Card da criança */}
-        <Card className="p-6 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+        <Card className="p-6 bg-gradient-to-br from-primary/10 via-card to-accent/10 border-primary/20 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center text-2xl font-heading font-bold">
+            <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center text-2xl font-heading font-bold ring-4 ring-background shadow-md">
               {crianca.nome.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-heading font-bold text-foreground truncate">{crianca.nome}</h2>
-              <p className="text-sm text-muted-foreground">{idade} anos · {crianca.diagnostico ?? "—"}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-medium">Acompanhando</p>
+              <h2 className="text-2xl font-heading font-bold text-foreground truncate leading-tight">{crianca.nome}</h2>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <Badge variant="secondary" className="text-xs">{idade} anos</Badge>
+                {crianca.diagnostico && (
+                  <Badge variant="outline" className="text-xs">{crianca.diagnostico}</Badge>
+                )}
+              </div>
             </div>
           </div>
         </Card>
 
         {/* Estatísticas amigáveis */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="p-5">
+          <Card className="p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <Calendar className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-2xl font-heading font-bold text-foreground">{sessoes.length}</p>
-                <p className="text-xs text-muted-foreground">Últimas sessões</p>
+              <div className="min-w-0">
+                <p className="text-2xl font-heading font-bold text-foreground leading-none">{sessoes.length}</p>
+                <p className="text-xs text-muted-foreground mt-1">Últimas sessões</p>
               </div>
             </div>
           </Card>
-          <Card className="p-5">
+          <Card className="p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-status-success/10 text-status-success flex items-center justify-center">
+              <div className="w-11 h-11 rounded-xl bg-status-success/10 text-status-success flex items-center justify-center">
                 <TrendingUp className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-2xl font-heading font-bold text-foreground">
-                  {contagemProgramas.avancados}/{contagemProgramas.total}
+              <div className="min-w-0">
+                <p className="text-2xl font-heading font-bold text-foreground leading-none">
+                  {contagemProgramas.avancados}<span className="text-base text-muted-foreground font-medium">/{contagemProgramas.total}</span>
                 </p>
-                <p className="text-xs text-muted-foreground">Programas avançados</p>
+                <p className="text-xs text-muted-foreground mt-1">Programas avançados</p>
               </div>
             </div>
           </Card>
@@ -187,9 +193,14 @@ export default function PaginaPortalFamilia() {
 
         {/* Últimas evoluções */}
         <Card className="p-6 space-y-4">
-          <div>
-            <h3 className="font-heading font-semibold text-foreground">Últimas evoluções</h3>
-            <p className="text-xs text-muted-foreground">Mensagens da equipe terapêutica para a família</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-heading font-semibold text-foreground">Últimas evoluções</h3>
+              <p className="text-xs text-muted-foreground">Mensagens da equipe terapêutica para você</p>
+            </div>
+            {sessoes.length > 0 && (
+              <Badge variant="outline" className="text-xs shrink-0">{sessoes.length} sessões</Badge>
+            )}
           </div>
 
           {sessoes.length === 0 ? (
@@ -197,19 +208,21 @@ export default function PaginaPortalFamilia() {
               <AlertDescription>Ainda não há sessões registradas.</AlertDescription>
             </Alert>
           ) : (
-            <div className="space-y-3">
+            <ol className="relative border-l-2 border-primary/20 ml-2 space-y-5">
               {sessoes.map((s) => (
-                <div key={s.id} className="border-l-2 border-primary/40 pl-4 py-2">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(s.data_sessao).toLocaleDateString("pt-BR", {
-                      day: "2-digit",
-                      month: "long",
-                    })}
+                <li key={s.id} className="pl-5 relative">
+                  <span className="absolute -left-[7px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-card" />
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5 flex-wrap">
+                    <span className="font-medium text-foreground">
+                      {new Date(s.data_sessao).toLocaleDateString("pt-BR", {
+                        day: "2-digit",
+                        month: "long",
+                      })}
+                    </span>
                     <span>·</span>
                     <span>{s.terapeuta_nome}</span>
                     {s.humor_final && (
-                      <Badge variant="secondary" className="ml-auto text-base px-2 py-0">
+                      <Badge variant="secondary" className="ml-auto text-base px-2 py-0" title="Humor ao final">
                         {emoji[s.humor_final - 1]}
                       </Badge>
                     )}
@@ -219,19 +232,21 @@ export default function PaginaPortalFamilia() {
                   ) : (
                     <p className="text-sm text-muted-foreground italic">Resumo não disponível.</p>
                   )}
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           )}
         </Card>
 
         {/* CTA para falar com a equipe */}
-        <Card className="p-5 bg-accent/5 border-accent/20">
-          <div className="flex items-center gap-3 flex-wrap">
-            <MessageSquare className="h-6 w-6 text-primary" />
+        <Card className="p-5 bg-gradient-to-r from-accent/10 to-primary/5 border-accent/30">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+              <MessageSquare className="h-5 w-5" />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground">Quer falar com a equipe?</p>
-              <p className="text-xs text-muted-foreground">Envie uma mensagem para a coordenação.</p>
+              <p className="text-xs text-muted-foreground">Envie uma mensagem para a coordenação clínica.</p>
             </div>
             <Button
               onClick={() => toast.success("Mensagem enviada para a coordenação!")}

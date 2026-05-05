@@ -35,29 +35,61 @@ interface ItemMenu {
   somenteAdmin?: boolean;
 }
 
-const itensMenu: ItemMenu[] = [
-  { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
-  { titulo: "Crianças", url: "/criancas", icone: Baby },
-  { titulo: "Funcionários", url: "/funcionarios", icone: Users },
-  { titulo: "Sessões", url: "/sessoes", icone: ClipboardList },
-  { titulo: "Programas", url: "/programas", icone: BookOpen },
-  { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck },
-  { titulo: "Agenda", url: "/agenda", icone: Calendar },
-  { titulo: "Escola", url: "/escola", icone: GraduationCap },
-  { titulo: "Família", url: "/familia", icone: Heart },
-  { titulo: "Relatórios", url: "/relatorios", icone: FileText },
-  { titulo: "Gráficos", url: "/graficos", icone: BarChart3 },
-  { titulo: "Automações", url: "/automacoes", icone: Zap },
-  { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
-  { titulo: "Configurações", url: "/configuracoes", icone: Settings },
-  { titulo: "Logs / Auditoria", url: "/logs", icone: Shield },
+interface SecaoMenu {
+  titulo: string;
+  itens: ItemMenu[];
+}
+
+const secoesMenu: SecaoMenu[] = [
+  {
+    titulo: "Geral",
+    itens: [
+      { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
+    ],
+  },
+  {
+    titulo: "Clínico",
+    itens: [
+      { titulo: "Crianças", url: "/criancas", icone: Baby },
+      { titulo: "Sessões", url: "/sessoes", icone: ClipboardList },
+      { titulo: "Programas", url: "/programas", icone: BookOpen },
+      { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck },
+      { titulo: "Agenda", url: "/agenda", icone: Calendar },
+    ],
+  },
+  {
+    titulo: "Relacionamento",
+    itens: [
+      { titulo: "Família", url: "/familia", icone: Heart },
+      { titulo: "Escola", url: "/escola", icone: GraduationCap },
+    ],
+  },
+  {
+    titulo: "Análise",
+    itens: [
+      { titulo: "Relatórios", url: "/relatorios", icone: FileText },
+      { titulo: "Gráficos", url: "/graficos", icone: BarChart3 },
+    ],
+  },
+  {
+    titulo: "Administração",
+    itens: [
+      { titulo: "Funcionários", url: "/funcionarios", icone: Users },
+      { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
+      { titulo: "Automações", url: "/automacoes", icone: Zap },
+      { titulo: "Configurações", url: "/configuracoes", icone: Settings },
+      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield },
+    ],
+  },
 ];
 
 export function BarraLateral() {
   const [recolhida, setRecolhida] = useState(false);
   const { user, sair } = useAuth();
   const { papel, perfil, isAdmin } = useUserRole();
-  const itensVisiveis = itensMenu.filter((i) => !i.somenteAdmin || isAdmin);
+  const secoesVisiveis = secoesMenu
+    .map((s) => ({ ...s, itens: s.itens.filter((i) => !i.somenteAdmin || isAdmin) }))
+    .filter((s) => s.itens.length > 0);
   const navigate = useNavigate();
 
   const aoSair = async () => {
@@ -113,21 +145,34 @@ export function BarraLateral() {
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
-          {itensVisiveis.map((item) => (
-            <NavLink
-              key={item.url}
-              to={item.url}
-              end={item.url === "/"}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                recolhida && "justify-center px-0"
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+          {secoesVisiveis.map((secao) => (
+            <div key={secao.titulo} className="space-y-0.5">
+              {!recolhida && (
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                  {secao.titulo}
+                </p>
               )}
-              activeClassName="bg-sidebar-accent text-sidebar-primary"
-            >
-              <item.icone className="h-[18px] w-[18px] shrink-0" />
-              {!recolhida && <span>{item.titulo}</span>}
-            </NavLink>
+              {recolhida && (
+                <div className="mx-3 my-2 border-t border-sidebar-border/60" />
+              )}
+              {secao.itens.map((item) => (
+                <NavLink
+                  key={item.url}
+                  to={item.url}
+                  end={item.url === "/"}
+                  title={recolhida ? item.titulo : undefined}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    recolhida && "justify-center px-0"
+                  )}
+                  activeClassName="bg-sidebar-accent text-sidebar-primary"
+                >
+                  <item.icone className="h-[18px] w-[18px] shrink-0" />
+                  {!recolhida && <span>{item.titulo}</span>}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 

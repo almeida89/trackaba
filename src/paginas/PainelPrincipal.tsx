@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Baby,
   ClipboardList,
   FileCheck,
   Calendar,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
+import { useUserRole, rotuloPapel } from "@/hooks/useUserRole";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   LineChart,
@@ -39,18 +43,34 @@ export default function PainelPrincipal() {
   const serie = useSerieMensalPainel();
   const distribuicao = useDistribuicaoNiveis();
   const atividades = useAtividadesRecentes(8);
+  const { papel, perfil } = useUserRole();
+  const navigate = useNavigate();
 
   const [acao, setAcao] = useState<AcaoRapida | null>(null);
 
   const e = stats.data;
+  const primeiroNome = (perfil?.nome_completo ?? "").split(" ")[0];
+  const hora = new Date().getHours();
+  const saudacao = hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-heading font-bold text-foreground">Painel Principal</h1>
-        <p className="text-muted-foreground text-sm mt-1 capitalize">
-          Visão geral da clínica — {MES_ATUAL}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-heading font-bold text-foreground">
+              {saudacao}{primeiroNome ? `, ${primeiroNome}` : ""} 👋
+            </h1>
+            {papel && (
+              <span className="hidden sm:inline-flex items-center rounded-full bg-primary/10 text-primary text-[11px] font-medium px-2 py-0.5 uppercase tracking-wide">
+                {rotuloPapel[papel]}
+              </span>
+            )}
+          </div>
+          <p className="text-muted-foreground text-sm mt-1 capitalize">
+            Visão geral da clínica — {MES_ATUAL}
+          </p>
+        </div>
       </div>
 
       {/* Stats grid */}
@@ -193,9 +213,20 @@ export default function PainelPrincipal() {
       {/* Bottom section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5">
-          <h3 className="font-heading font-semibold text-foreground mb-4">
-            Atividades Recentes
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-heading font-semibold text-foreground">
+                Atividades Recentes
+              </h3>
+              <p className="text-xs text-muted-foreground">Últimas ações registradas no sistema</p>
+            </div>
+            <button
+              onClick={() => navigate("/logs")}
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+            >
+              Ver tudo <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
           {atividades.isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -203,47 +234,63 @@ export default function PainelPrincipal() {
               ))}
             </div>
           ) : (atividades.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              Sem atividades registradas ainda.
-            </p>
+            <div className="py-10 text-center">
+              <Sparkles className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Sem atividades registradas ainda.
+              </p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <ul className="divide-y divide-border">
               {(atividades.data ?? []).map((item) => (
-                <div
+                <li
                   key={item.id}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  className="flex items-center justify-between gap-3 py-2.5 group"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                    <span className="text-sm text-foreground">{item.texto}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="h-2 w-2 rounded-full bg-primary shrink-0 group-hover:scale-125 transition-transform" />
+                    <span className="text-sm text-foreground truncate">{item.texto}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap ml-4">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap tabular-nums">
                     {item.hora}
                   </span>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="font-heading font-semibold text-foreground mb-4">Acesso Rápido</h3>
-          <div className="space-y-2">
+          <h3 className="font-heading font-semibold text-foreground">Acesso Rápido</h3>
+          <p className="text-xs text-muted-foreground mb-4">Ações frequentes em um clique</p>
+          <div className="grid grid-cols-2 gap-2">
             {[
-              { icone: Baby, label: "Nova Criança", cor: "text-primary", acao: "crianca" as const },
-              { icone: ClipboardList, label: "Registrar Sessão", cor: "text-status-success", acao: "sessao" as const },
-              { icone: FileCheck, label: "Nova Avaliação", cor: "text-status-info", acao: "avaliacao" as const },
-              { icone: Calendar, label: "Agendar", cor: "text-status-warning", acao: "agendamento" as const },
-            ].map((atalho) => (
-              <button
-                key={atalho.acao}
-                onClick={() => setAcao(atalho.acao)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/60 transition-colors text-left"
-              >
-                <atalho.icone className={`h-4 w-4 ${atalho.cor}`} />
-                <span className="text-sm font-medium text-foreground">{atalho.label}</span>
-              </button>
-            ))}
+              { icone: Baby, label: "Nova Criança", cor: "primary", acao: "crianca" as const },
+              { icone: ClipboardList, label: "Sessão", cor: "success", acao: "sessao" as const },
+              { icone: FileCheck, label: "Avaliação", cor: "info", acao: "avaliacao" as const },
+              { icone: Calendar, label: "Agendar", cor: "warning", acao: "agendamento" as const },
+            ].map((atalho) => {
+              const corMap: Record<string, string> = {
+                primary: "bg-primary/10 text-primary",
+                success: "bg-status-success/10 text-status-success",
+                info: "bg-status-info/10 text-status-info",
+                warning: "bg-status-warning/10 text-status-warning",
+              };
+              return (
+                <button
+                  key={atalho.acao}
+                  onClick={() => setAcao(atalho.acao)}
+                  className="group flex flex-col items-start gap-2 p-3 rounded-lg border border-border bg-background hover:border-primary/40 hover:shadow-sm transition-all text-left"
+                >
+                  <span className={`p-2 rounded-md ${corMap[atalho.cor]}`}>
+                    <atalho.icone className="h-4 w-4" />
+                  </span>
+                  <span className="text-xs font-medium text-foreground leading-tight">
+                    {atalho.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
