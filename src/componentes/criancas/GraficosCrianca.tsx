@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Cell,
 } from "recharts";
 import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
