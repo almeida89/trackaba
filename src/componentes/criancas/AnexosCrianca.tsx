@@ -252,7 +252,7 @@ export function AnexosCrianca({ criancaId }: Props) {
                           if (confirm(`Remover "${nomeBonito(arq.name)}"?`)) mutRemover.mutate(arq);
                         }}
                         disabled={removendo}
-                        className="text-status-danger hover:text-status-danger hover:bg-status-danger/10"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         title="Remover"
                       >
                         {removendo ? (
