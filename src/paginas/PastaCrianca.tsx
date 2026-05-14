@@ -26,6 +26,14 @@ import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
 import { SecaoFamiliarCrianca } from "@/componentes/familia/SecaoFamiliarCrianca";
 import { useCrianca, calcularIdade, formatarDataBR, CriancaDetalhe } from "@/hooks/useCrianca";
 import { FormularioCamposCrianca, CampoCrianca } from "@/componentes/criancas/FormularioCamposCrianca";
+import { AnexosCrianca } from "@/componentes/criancas/AnexosCrianca";
+
+const CAMPOS_ACOMP_ESCOLAR: CampoCrianca[] = [
+  { campo: "acomp_escolar_nome", rotulo: "Nome do(a) Profissional", placeholder: "Nome do acompanhante terapêutico", colSpan: 2 },
+  { campo: "acomp_escolar_horario", rotulo: "Carga Horária Semanal", placeholder: "Ex.: Seg/Qua/Sex 13h–17h", colSpan: 2 },
+  { campo: "acomp_escolar_objetivos", rotulo: "Principais Objetivos", tipo: "textarea", placeholder: "Metas do acompanhamento na escola", colSpan: 2 },
+  { campo: "acomp_escolar_observacoes", rotulo: "Observações Gerais", tipo: "textarea", placeholder: "Notas, ajustes, alinhamentos...", colSpan: 2 },
+];
 
 const CAMPOS_MEDICO: CampoCrianca[] = [
   { campo: "pediatra_nome", rotulo: "Nome do Pediatra", placeholder: "Dr(a). ..." },
