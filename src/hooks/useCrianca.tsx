@@ -94,11 +94,26 @@ export function useCrianca(id: string | undefined) {
     onError: (e: Error) => toast.error("Erro ao enviar foto: " + e.message),
   });
 
+  const mutAtualizar = useMutation({
+    mutationFn: async (campos: Partial<CriancaDetalhe>) => {
+      if (!id) throw new Error("ID inválido");
+      const { error } = await supabase.from("criancas").update(campos).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Dados atualizados");
+      queryClient.invalidateQueries({ queryKey: ["criancas", "detalhe", id] });
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar: " + e.message),
+  });
+
   return {
     crianca: query.data ?? null,
     carregando: query.isLoading,
     recarregar: () => queryClient.invalidateQueries({ queryKey: ["criancas", "detalhe", id] }),
     enviarFoto: mutFoto.mutateAsync,
     enviandoFoto: mutFoto.isPending,
+    atualizar: mutAtualizar.mutateAsync,
+    salvando: mutAtualizar.isPending,
   };
 }
