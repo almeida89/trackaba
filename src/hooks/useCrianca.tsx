@@ -14,10 +14,19 @@ export interface CriancaDetalhe {
   foto_url: string | null;
   ativo: boolean;
   criado_em: string;
+  pediatra_nome: string | null;
+  pediatra_telefone: string | null;
+  neurologista_nome: string | null;
+  alergias: string | null;
+  medicacoes: string | null;
+  escola_nome: string | null;
+  escola_serie: string | null;
+  escola_professor: string | null;
+  escola_telefone: string | null;
 }
 
 const COLUNAS =
-  "id,nome,data_nascimento,diagnostico,responsavel_principal,telefone_contato,email_contato,observacoes,foto_url,ativo,criado_em";
+  "id,nome,data_nascimento,diagnostico,responsavel_principal,telefone_contato,email_contato,observacoes,foto_url,ativo,criado_em,pediatra_nome,pediatra_telefone,neurologista_nome,alergias,medicacoes,escola_nome,escola_serie,escola_professor,escola_telefone";
 
 export function calcularIdade(iso: string): number {
   const nasc = new Date(iso);
