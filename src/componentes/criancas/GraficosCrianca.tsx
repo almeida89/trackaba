@@ -146,7 +146,7 @@ export function GraficosCrianca({ criancaNome }: Props) {
                 />
                 <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
                   {dadosNiveis.map((entry, index) => (
-                    <cell key={`cell-${index}`} fill={entry.cor} />
+                    <Cell key={`cell-${index}`} fill={entry.cor} />
                   ))}
                 </Bar>
               </BarChart>
