@@ -224,6 +224,10 @@ export default function PastaCrianca() {
         return <AvaliacoesCrianca criancaId={crianca.id} />;
       case "historico":
         return <HistoricoCrianca criancaId={crianca.id} />;
+      case "graficos":
+        return <GraficosCrianca criancaNome={crianca.nome} />;
+      case "relatorios":
+        return <RelatoriosCrianca crianca={crianca} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
