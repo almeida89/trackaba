@@ -29,6 +29,8 @@ import { FormularioCamposCrianca, CampoCrianca } from "@/componentes/criancas/Fo
 import { AnexosCrianca } from "@/componentes/criancas/AnexosCrianca";
 import { AvaliacoesCrianca } from "@/componentes/criancas/AvaliacoesCrianca";
 import { HistoricoCrianca } from "@/componentes/criancas/HistoricoCrianca";
+import { GraficosCrianca } from "@/componentes/criancas/GraficosCrianca";
+import { RelatoriosCrianca } from "@/componentes/criancas/RelatoriosCrianca";
 
 const CAMPOS_ACOMP_ESCOLAR: CampoCrianca[] = [
   { campo: "acomp_escolar_nome", rotulo: "Nome do(a) Profissional", placeholder: "Nome do acompanhante terapêutico", colSpan: 2 },
@@ -222,6 +224,10 @@ export default function PastaCrianca() {
         return <AvaliacoesCrianca criancaId={crianca.id} />;
       case "historico":
         return <HistoricoCrianca criancaId={crianca.id} />;
+      case "graficos":
+        return <GraficosCrianca criancaNome={crianca.nome} />;
+      case "relatorios":
+        return <RelatoriosCrianca crianca={crianca} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
@@ -230,7 +236,7 @@ export default function PastaCrianca() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 print:hidden">
         <button
           onClick={() => navegar("/criancas")}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -293,7 +299,7 @@ export default function PastaCrianca() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-border overflow-x-auto print:hidden">
         <div className="flex gap-1 min-w-max pb-px">
           {abas.map((aba) => (
             <button
