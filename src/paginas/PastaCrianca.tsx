@@ -236,7 +236,7 @@ export default function PastaCrianca() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 print:hidden">
         <button
           onClick={() => navegar("/criancas")}
           className="p-2 rounded-lg hover:bg-muted transition-colors"
