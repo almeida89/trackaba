@@ -340,6 +340,10 @@ export type Database = {
       }
       criancas: {
         Row: {
+          acomp_escolar_horario: string | null
+          acomp_escolar_nome: string | null
+          acomp_escolar_objetivos: string | null
+          acomp_escolar_observacoes: string | null
           alergias: string | null
           ativo: boolean
           atualizado_em: string
@@ -364,6 +368,10 @@ export type Database = {
           telefone_contato: string | null
         }
         Insert: {
+          acomp_escolar_horario?: string | null
+          acomp_escolar_nome?: string | null
+          acomp_escolar_objetivos?: string | null
+          acomp_escolar_observacoes?: string | null
           alergias?: string | null
           ativo?: boolean
           atualizado_em?: string
@@ -388,6 +396,10 @@ export type Database = {
           telefone_contato?: string | null
         }
         Update: {
+          acomp_escolar_horario?: string | null
+          acomp_escolar_nome?: string | null
+          acomp_escolar_objetivos?: string | null
+          acomp_escolar_observacoes?: string | null
           alergias?: string | null
           ativo?: boolean
           atualizado_em?: string
