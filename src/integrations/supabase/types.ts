@@ -340,6 +340,7 @@ export type Database = {
       }
       criancas: {
         Row: {
+          alergias: string | null
           ativo: boolean
           atualizado_em: string
           criado_em: string
@@ -347,14 +348,23 @@ export type Database = {
           data_nascimento: string
           diagnostico: string | null
           email_contato: string | null
+          escola_nome: string | null
+          escola_professor: string | null
+          escola_serie: string | null
+          escola_telefone: string | null
           foto_url: string | null
           id: string
+          medicacoes: string | null
+          neurologista_nome: string | null
           nome: string
           observacoes: string | null
+          pediatra_nome: string | null
+          pediatra_telefone: string | null
           responsavel_principal: string | null
           telefone_contato: string | null
         }
         Insert: {
+          alergias?: string | null
           ativo?: boolean
           atualizado_em?: string
           criado_em?: string
@@ -362,14 +372,23 @@ export type Database = {
           data_nascimento: string
           diagnostico?: string | null
           email_contato?: string | null
+          escola_nome?: string | null
+          escola_professor?: string | null
+          escola_serie?: string | null
+          escola_telefone?: string | null
           foto_url?: string | null
           id?: string
+          medicacoes?: string | null
+          neurologista_nome?: string | null
           nome: string
           observacoes?: string | null
+          pediatra_nome?: string | null
+          pediatra_telefone?: string | null
           responsavel_principal?: string | null
           telefone_contato?: string | null
         }
         Update: {
+          alergias?: string | null
           ativo?: boolean
           atualizado_em?: string
           criado_em?: string
@@ -377,10 +396,18 @@ export type Database = {
           data_nascimento?: string
           diagnostico?: string | null
           email_contato?: string | null
+          escola_nome?: string | null
+          escola_professor?: string | null
+          escola_serie?: string | null
+          escola_telefone?: string | null
           foto_url?: string | null
           id?: string
+          medicacoes?: string | null
+          neurologista_nome?: string | null
           nome?: string
           observacoes?: string | null
+          pediatra_nome?: string | null
+          pediatra_telefone?: string | null
           responsavel_principal?: string | null
           telefone_contato?: string | null
         }
