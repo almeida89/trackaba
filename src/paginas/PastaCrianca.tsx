@@ -299,7 +299,7 @@ export default function PastaCrianca() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border overflow-x-auto">
+      <div className="border-b border-border overflow-x-auto print:hidden">
         <div className="flex gap-1 min-w-max pb-px">
           {abas.map((aba) => (
             <button
