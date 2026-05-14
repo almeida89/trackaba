@@ -27,6 +27,8 @@ import { SecaoFamiliarCrianca } from "@/componentes/familia/SecaoFamiliarCrianca
 import { useCrianca, calcularIdade, formatarDataBR, CriancaDetalhe } from "@/hooks/useCrianca";
 import { FormularioCamposCrianca, CampoCrianca } from "@/componentes/criancas/FormularioCamposCrianca";
 import { AnexosCrianca } from "@/componentes/criancas/AnexosCrianca";
+import { AvaliacoesCrianca } from "@/componentes/criancas/AvaliacoesCrianca";
+import { HistoricoCrianca } from "@/componentes/criancas/HistoricoCrianca";
 
 const CAMPOS_ACOMP_ESCOLAR: CampoCrianca[] = [
   { campo: "acomp_escolar_nome", rotulo: "Nome do(a) Profissional", placeholder: "Nome do acompanhante terapêutico", colSpan: 2 },
@@ -216,6 +218,10 @@ export default function PastaCrianca() {
         );
       case "anexos":
         return <AnexosCrianca criancaId={crianca.id} />;
+      case "avaliacoes":
+        return <AvaliacoesCrianca criancaId={crianca.id} />;
+      case "historico":
+        return <HistoricoCrianca criancaId={crianca.id} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
