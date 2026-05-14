@@ -23,10 +23,14 @@ export interface CriancaDetalhe {
   escola_serie: string | null;
   escola_professor: string | null;
   escola_telefone: string | null;
+  acomp_escolar_nome: string | null;
+  acomp_escolar_horario: string | null;
+  acomp_escolar_objetivos: string | null;
+  acomp_escolar_observacoes: string | null;
 }
 
 const COLUNAS =
-  "id,nome,data_nascimento,diagnostico,responsavel_principal,telefone_contato,email_contato,observacoes,foto_url,ativo,criado_em,pediatra_nome,pediatra_telefone,neurologista_nome,alergias,medicacoes,escola_nome,escola_serie,escola_professor,escola_telefone";
+  "id,nome,data_nascimento,diagnostico,responsavel_principal,telefone_contato,email_contato,observacoes,foto_url,ativo,criado_em,pediatra_nome,pediatra_telefone,neurologista_nome,alergias,medicacoes,escola_nome,escola_serie,escola_professor,escola_telefone,acomp_escolar_nome,acomp_escolar_horario,acomp_escolar_objetivos,acomp_escolar_observacoes";
 
 export function calcularIdade(iso: string): number {
   const nasc = new Date(iso);
