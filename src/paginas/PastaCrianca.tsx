@@ -173,6 +173,28 @@ export default function PastaCrianca() {
         return <SessoesCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "familiar":
         return <SecaoFamiliarCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
+      case "medico":
+        return (
+          <FormularioCamposCrianca
+            titulo="Informações Médicas"
+            descricao="Dados clínicos e profissionais que acompanham a criança."
+            crianca={crianca}
+            campos={CAMPOS_MEDICO}
+            salvando={salvando}
+            onSalvar={atualizar}
+          />
+        );
+      case "escola":
+        return (
+          <FormularioCamposCrianca
+            titulo="Informações Escolares"
+            descricao="Dados da escola e do(a) professor(a) responsável."
+            crianca={crianca}
+            campos={CAMPOS_ESCOLA}
+            salvando={salvando}
+            onSalvar={atualizar}
+          />
+        );
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
