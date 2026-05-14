@@ -25,6 +25,22 @@ import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
 import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
 import { SecaoFamiliarCrianca } from "@/componentes/familia/SecaoFamiliarCrianca";
 import { useCrianca, calcularIdade, formatarDataBR, CriancaDetalhe } from "@/hooks/useCrianca";
+import { FormularioCamposCrianca, CampoCrianca } from "@/componentes/criancas/FormularioCamposCrianca";
+
+const CAMPOS_MEDICO: CampoCrianca[] = [
+  { campo: "pediatra_nome", rotulo: "Nome do Pediatra", placeholder: "Dr(a). ..." },
+  { campo: "pediatra_telefone", rotulo: "Telefone do Pediatra", tipo: "tel", placeholder: "(11) 99999-9999" },
+  { campo: "neurologista_nome", rotulo: "Nome do Neurologista", placeholder: "Dr(a). ...", colSpan: 2 },
+  { campo: "alergias", rotulo: "Alergias Conhecidas", tipo: "textarea", placeholder: "Liste alergias alimentares, medicamentosas, etc.", colSpan: 2 },
+  { campo: "medicacoes", rotulo: "Medicações em Uso", tipo: "textarea", placeholder: "Nome, dosagem e horários", colSpan: 2 },
+];
+
+const CAMPOS_ESCOLA: CampoCrianca[] = [
+  { campo: "escola_nome", rotulo: "Nome da Escola", placeholder: "Nome da instituição" },
+  { campo: "escola_serie", rotulo: "Série / Ano", placeholder: "Ex.: 2º ano fundamental" },
+  { campo: "escola_professor", rotulo: "Nome do(a) Professor(a)", placeholder: "Professor(a) responsável" },
+  { campo: "escola_telefone", rotulo: "Telefone de Contato da Escola", tipo: "tel", placeholder: "(11) 99999-9999" },
+];
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
