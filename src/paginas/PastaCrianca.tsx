@@ -25,6 +25,22 @@ import { SessoesCrianca } from "@/componentes/sessoes/SessoesCrianca";
 import { ProgramasCrianca } from "@/componentes/programas/ProgramasCrianca";
 import { SecaoFamiliarCrianca } from "@/componentes/familia/SecaoFamiliarCrianca";
 import { useCrianca, calcularIdade, formatarDataBR, CriancaDetalhe } from "@/hooks/useCrianca";
+import { FormularioCamposCrianca, CampoCrianca } from "@/componentes/criancas/FormularioCamposCrianca";
+
+const CAMPOS_MEDICO: CampoCrianca[] = [
+  { campo: "pediatra_nome", rotulo: "Nome do Pediatra", placeholder: "Dr(a). ..." },
+  { campo: "pediatra_telefone", rotulo: "Telefone do Pediatra", tipo: "tel", placeholder: "(11) 99999-9999" },
+  { campo: "neurologista_nome", rotulo: "Nome do Neurologista", placeholder: "Dr(a). ...", colSpan: 2 },
+  { campo: "alergias", rotulo: "Alergias Conhecidas", tipo: "textarea", placeholder: "Liste alergias alimentares, medicamentosas, etc.", colSpan: 2 },
+  { campo: "medicacoes", rotulo: "Medicações em Uso", tipo: "textarea", placeholder: "Nome, dosagem e horários", colSpan: 2 },
+];
+
+const CAMPOS_ESCOLA: CampoCrianca[] = [
+  { campo: "escola_nome", rotulo: "Nome da Escola", placeholder: "Nome da instituição" },
+  { campo: "escola_serie", rotulo: "Série / Ano", placeholder: "Ex.: 2º ano fundamental" },
+  { campo: "escola_professor", rotulo: "Nome do(a) Professor(a)", placeholder: "Professor(a) responsável" },
+  { campo: "escola_telefone", rotulo: "Telefone de Contato da Escola", tipo: "tel", placeholder: "(11) 99999-9999" },
+];
 
 const abas = [
   { id: "cadastro", label: "Cadastro", icone: User },
@@ -93,7 +109,7 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
-  const { crianca, carregando, enviarFoto, enviandoFoto } = useCrianca(id);
+  const { crianca, carregando, enviarFoto, enviandoFoto, atualizar, salvando } = useCrianca(id);
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
@@ -157,6 +173,28 @@ export default function PastaCrianca() {
         return <SessoesCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "familiar":
         return <SecaoFamiliarCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
+      case "medico":
+        return (
+          <FormularioCamposCrianca
+            titulo="Informações Médicas"
+            descricao="Dados clínicos e profissionais que acompanham a criança."
+            crianca={crianca}
+            campos={CAMPOS_MEDICO}
+            salvando={salvando}
+            onSalvar={atualizar}
+          />
+        );
+      case "escola":
+        return (
+          <FormularioCamposCrianca
+            titulo="Informações Escolares"
+            descricao="Dados da escola e do(a) professor(a) responsável."
+            crianca={crianca}
+            campos={CAMPOS_ESCOLA}
+            salvando={salvando}
+            onSalvar={atualizar}
+          />
+        );
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
