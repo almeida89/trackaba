@@ -29,6 +29,8 @@ import { FormularioCamposCrianca, CampoCrianca } from "@/componentes/criancas/Fo
 import { AnexosCrianca } from "@/componentes/criancas/AnexosCrianca";
 import { AvaliacoesCrianca } from "@/componentes/criancas/AvaliacoesCrianca";
 import { HistoricoCrianca } from "@/componentes/criancas/HistoricoCrianca";
+import { GraficosCrianca } from "@/componentes/criancas/GraficosCrianca";
+import { RelatoriosCrianca } from "@/componentes/criancas/RelatoriosCrianca";
 
 const CAMPOS_ACOMP_ESCOLAR: CampoCrianca[] = [
   { campo: "acomp_escolar_nome", rotulo: "Nome do(a) Profissional", placeholder: "Nome do acompanhante terapêutico", colSpan: 2 },
