@@ -109,7 +109,7 @@ function PlaceholderAba({ titulo }: { titulo: string }) {
 export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
-  const { crianca, carregando, enviarFoto, enviandoFoto } = useCrianca(id);
+  const { crianca, carregando, enviarFoto, enviandoFoto, atualizar, salvando } = useCrianca(id);
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
