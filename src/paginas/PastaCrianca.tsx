@@ -203,6 +203,19 @@ export default function PastaCrianca() {
             onSalvar={atualizar}
           />
         );
+      case "acompanhante":
+        return (
+          <FormularioCamposCrianca
+            titulo="Acompanhante Escolar"
+            descricao="Profissional que acompanha a criança no ambiente escolar."
+            crianca={crianca}
+            campos={CAMPOS_ACOMP_ESCOLAR}
+            salvando={salvando}
+            onSalvar={atualizar}
+          />
+        );
+      case "anexos":
+        return <AnexosCrianca criancaId={crianca.id} />;
       default:
         return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
