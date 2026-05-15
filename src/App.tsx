@@ -22,7 +22,7 @@ import PaginaSessoes from "@/paginas/PaginaSessoes";
 import PaginaEscola from "@/paginas/PaginaEscola";
 import PaginaFuncionarios from "@/paginas/PaginaFuncionarios";
 import PaginaFamilia from "@/paginas/PaginaFamilia";
-import PaginaRelatorios from "@/paginas/PaginaRelatorios";
+
 import PaginaAvaliacoes from "@/paginas/PaginaAvaliacoes";
 import PaginaConfiguracoes from "@/paginas/PaginaConfiguracoes";
 import PaginaLogs from "@/paginas/PaginaLogs";
