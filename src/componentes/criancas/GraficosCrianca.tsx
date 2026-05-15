@@ -1,170 +1,283 @@
-import { useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  Cell,
-} from "recharts";
-import { format, subDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { TrendingUp, BarChart3 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { BarChart3, TrendingUp, Target, Activity, Award, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { NIVEIS_DESEMPENHO } from "@/componentes/graficos/dadosGraficos";
+import { GraficoEvolucao } from "@/componentes/graficos/GraficoEvolucao";
+import { GraficoAcertos } from "@/componentes/graficos/GraficoAcertos";
+import { GraficoDistribuicao } from "@/componentes/graficos/GraficoDistribuicao";
+import { useGraficosBanco } from "@/hooks/useGraficosBanco";
 
 interface Props {
+  criancaId: string;
   criancaNome: string;
 }
 
-function gerarDadosEvolucao(dias: number) {
-  const dados = [];
-  for (let i = dias - 1; i >= 0; i--) {
-    const data = subDays(new Date(), i);
-    const progresso = (dias - 1 - i) / Math.max(dias - 1, 1);
-    const base = 40 + progresso * 45;
-    const ruido = (Math.random() - 0.5) * 20;
-    const percentual = Math.max(10, Math.min(98, Math.round(base + ruido)));
-    dados.push({
-      data: format(data, "dd/MM", { locale: ptBR }),
-      percentual,
-    });
+export function GraficosCrianca({ criancaId, criancaNome }: Props) {
+  const { criancas, carregando } = useGraficosBanco();
+  const [programaId, setProgramaId] = useState<string>("");
+
+  const crianca = useMemo(
+    () => criancas.find((c) => c.id === criancaId),
+    [criancas, criancaId],
+  );
+
+  useEffect(() => {
+    if (crianca && !programaId && crianca.programas[0]) {
+      setProgramaId(crianca.programas[0].id);
+    }
+  }, [crianca, programaId]);
+
+  const programa = useMemo(
+    () => crianca?.programas.find((p) => p.id === programaId) ?? crianca?.programas[0],
+    [crianca, programaId],
+  );
+
+  const metricas = useMemo(() => {
+    if (!programa || programa.registros.length === 0) {
+      return { total: 0, acertosMedio: 0, evolucao: 0, independencia: 0 };
+    }
+    const regs = programa.registros;
+    const total = regs.length;
+    const ultimo = regs[regs.length - 1];
+    const primeiro = regs[0];
+    const acertosMedio = Math.round(
+      (regs.reduce((s, r) => s + r.tentativasCorretas / r.tentativasTotais, 0) / total) * 100,
+    );
+    const evolucao = NIVEIS_DESEMPENHO[ultimo.nivel].valor - NIVEIS_DESEMPENHO[primeiro.nivel].valor;
+    const independencia = Math.round(
+      (regs.filter((r) => r.nivel === "IND" || r.nivel === "+").length / total) * 100,
+    );
+    return { total, acertosMedio, evolucao, independencia };
+  }, [programa]);
+
+  if (carregando) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
-  return dados;
-}
 
-const NIVEIS = [
-  { nome: "Linha Base", sigla: "-", cor: "hsl(var(--muted-foreground))" },
-  { nome: "Ajuda Física Total", sigla: "AFT", cor: "hsl(var(--destructive))" },
-  { nome: "Ajuda Física Leve", sigla: "AFL", cor: "hsl(var(--status-warning))" },
-  { nome: "Ajuda Gestual", sigla: "AG", cor: "hsl(var(--status-info))" },
-  { nome: "Independente", sigla: "IND", cor: "hsl(var(--status-success))" },
-  { nome: "Acima do Esperado", sigla: "+", cor: "hsl(var(--primary))" },
-];
-
-function gerarDadosNiveis() {
-  return NIVEIS.map((n) => ({
-    nome: n.sigla,
-    valor: Math.floor(Math.random() * 25) + 2,
-    cor: n.cor,
-  })).filter((n) => n.valor > 0);
-}
-
-export function GraficosCrianca({ criancaNome }: Props) {
-  const dadosEvolucao = useMemo(() => gerarDadosEvolucao(30), []);
-  const dadosNiveis = useMemo(() => gerarDadosNiveis(), []);
+  if (!crianca || !programa) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+        <BarChart3 className="h-10 w-10 mb-3 opacity-40" />
+        <p className="text-sm">Nenhum programa com registros disponível para análise de {criancaNome}.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Evolução das Sessões */}
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h2 className="text-xl font-heading font-bold text-foreground">Gráficos & Análises</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Evolução individual de {crianca.nome} em seus programas terapêuticos
+          </p>
+        </div>
+        <Badge variant="outline" className="gap-1.5 py-1.5">
+          <Activity className="h-3.5 w-3.5 text-primary" />
+          Análise por programa individual
+        </Badge>
+      </div>
+
+      {/* Seletor de programa */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Evolução das Sessões</CardTitle>
+        <CardContent className="pt-6">
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Programa
+            </label>
+            <Select value={programa.id} onValueChange={setProgramaId}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {crianca.programas.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.nome} — {p.disciplina}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <CardDescription>
-            Percentual de acertos ao longo do tempo — {criancaNome}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="w-full h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dadosEvolucao} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="data"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={11}
-                  interval={4}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={11}
-                  domain={[0, 100]}
-                  tickFormatter={(v) => `${v}%`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.5rem",
-                    fontSize: "0.8rem",
-                  }}
-                  formatter={(v: number) => [`${v}%`, "Acertos"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="percentual"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: "hsl(var(--primary))" }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+
+          <div className="mt-4 p-4 rounded-lg bg-muted/40 border border-border">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs text-muted-foreground">Objetivo do programa</p>
+                <p className="text-sm text-foreground mt-0.5">{programa.objetivo}</p>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Badge variant="secondary">{programa.disciplina}</Badge>
+                <Badge variant="outline">{programa.tipo}</Badge>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Níveis de Desempenho */}
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Sessões registradas</p>
+                <p className="text-2xl font-heading font-bold text-foreground mt-1">{metricas.total}</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-primary/10">
+                <BarChart3 className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Acertos médios</p>
+                <p className="text-2xl font-heading font-bold text-foreground mt-1">{metricas.acertosMedio}%</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-accent/15">
+                <Target className="h-5 w-5 text-accent-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Evolução</p>
+                <p className="text-2xl font-heading font-bold text-status-success mt-1">
+                  +{metricas.evolucao} níveis
+                </p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-status-success/15">
+                <TrendingUp className="h-5 w-5 text-status-success" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Independência</p>
+                <p className="text-2xl font-heading font-bold text-foreground mt-1">{metricas.independencia}%</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-status-info/15">
+                <Award className="h-5 w-5 text-status-info" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráficos em abas */}
+      <Tabs defaultValue="evolucao" className="space-y-4">
+        <TabsList className="grid grid-cols-3 w-full md:w-auto">
+          <TabsTrigger value="evolucao">Curva de Aprendizagem</TabsTrigger>
+          <TabsTrigger value="acertos">Taxa de Acertos</TabsTrigger>
+          <TabsTrigger value="distribuicao">Distribuição</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="evolucao">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Evolução por nível de desempenho</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Linha de tendência baseada na escala ABA: Linha Base → Independente
+              </p>
+            </CardHeader>
+            <CardContent>
+              <GraficoEvolucao programa={programa} />
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
+                {Object.entries(NIVEIS_DESEMPENHO).map(([sigla, info]) => (
+                  <div key={sigla} className="flex items-center gap-1.5 text-xs">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-sm"
+                      style={{ backgroundColor: info.cor }}
+                    />
+                    <span className="text-muted-foreground">
+                      <strong className="text-foreground">{sigla}</strong> {info.nome}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="acertos">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Percentual de acertos — últimas 14 sessões</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Tentativas corretas em relação ao total de tentativas por sessão
+              </p>
+            </CardHeader>
+            <CardContent>
+              <GraficoAcertos programa={programa} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="distribuicao">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Distribuição dos níveis registrados</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Frequência de cada nível ao longo de todas as sessões do programa
+              </p>
+            </CardHeader>
+            <CardContent>
+              <GraficoDistribuicao programa={programa} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Visão geral de todos os programas da criança */}
       <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Níveis de Desempenho</CardTitle>
-          </div>
-          <CardDescription>
-            Distribuição de registros por nível de desempenho ABA
-          </CardDescription>
+        <CardHeader>
+          <CardTitle className="text-base">Todos os programas de {crianca.nome}</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Visão consolidada — clique em um programa para ver sua análise individual
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dadosNiveis} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="nome" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "0.5rem",
-                    fontSize: "0.8rem",
-                  }}
-                  formatter={(v: number) => [v, "Registros"]}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: "0.75rem" }}
-                  formatter={(value: string) => {
-                    const item = NIVEIS.find((n) => n.sigla === value);
-                    return item ? item.nome : value;
-                  }}
-                />
-                <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
-                  {dadosNiveis.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.cor} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3 justify-center">
-            {NIVEIS.map((n) => (
-              <div key={n.sigla} className="flex items-center gap-1.5 text-xs">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-sm"
-                  style={{ backgroundColor: n.cor }}
-                />
-                <span className="text-muted-foreground">
-                  {n.sigla} — {n.nome}
-                </span>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {crianca.programas.map((p) => {
+              const ult = p.registros[p.registros.length - 1];
+              const ativo = p.id === programa.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setProgramaId(p.id)}
+                  className={`text-left p-4 rounded-lg border transition-all hover:shadow-sm ${
+                    ativo ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-sm text-foreground">{p.nome}</p>
+                    <Badge variant="outline" className="text-[10px]">
+                      {ult.nivel}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{p.disciplina}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {p.registros.length} sessões • Atual:{" "}
+                    <strong className="text-foreground">{NIVEIS_DESEMPENHO[ult.nivel].nome}</strong>
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
