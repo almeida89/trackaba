@@ -44,6 +44,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppRole, rotuloPapel, useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { mascararTelefone } from "@/lib/mascaras";
 
 interface UsuarioLista {
   id: string;
@@ -227,7 +228,7 @@ export default function PaginaUsuarios() {
                 <Input
                   id="tel"
                   value={form.telefone}
-                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                  onChange={(e) => setForm({ ...form, telefone: mascararTelefone(e.target.value) })}
                   maxLength={30}
                 />
               </div>
