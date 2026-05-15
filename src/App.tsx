@@ -16,7 +16,7 @@ import ListaCriancas from "@/paginas/ListaCriancas";
 import PastaCrianca from "@/paginas/PastaCrianca";
 import PaginaModulo from "@/paginas/PaginaModulo";
 import PaginaAgenda from "@/paginas/PaginaAgenda";
-import PaginaGraficos from "@/paginas/PaginaGraficos";
+
 import PaginaProgramas from "@/paginas/PaginaProgramas";
 import PaginaSessoes from "@/paginas/PaginaSessoes";
 import PaginaEscola from "@/paginas/PaginaEscola";
