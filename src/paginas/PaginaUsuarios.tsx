@@ -63,6 +63,24 @@ const esquemaCriar = z.object({
   papel: z.enum(["admin", "psicologo", "coordenador", "recepcionista", "familia"]),
 });
 
+const mensagemErroEdge = (error: unknown, fallback = "Erro ao comunicar com servidor.") => {
+  if (!error) return fallback;
+  if (typeof error === "object" && error !== null) {
+    const erroObj = error as { name?: string; message?: string; context?: unknown };
+    if (erroObj.name === "FunctionsFetchError") {
+      return "Falha de rede/CORS ao chamar função. Verifique deploy da Edge Function e origem permitida.";
+    }
+    if (erroObj.name === "FunctionsRelayError") {
+      return "Falha no relay da função. Tente novamente em instantes.";
+    }
+    if (erroObj.name === "FunctionsHttpError") {
+      return erroObj.message || "A função respondeu com erro HTTP.";
+    }
+    if (erroObj.message) return erroObj.message;
+  }
+  return fallback;
+};
+
 export default function PaginaUsuarios() {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
@@ -148,7 +166,7 @@ export default function PaginaUsuarios() {
       },
     });
     setCriando(false);
-    const erro = (data as { erro?: string } | null)?.erro ?? error?.message;
+    const erro = (data as { erro?: string } | null)?.erro ?? mensagemErroEdge(error);
     if (erro) {
       toast.error(erro);
       return;
@@ -165,7 +183,7 @@ export default function PaginaUsuarios() {
       body: { acao: "remover", user_id: userId },
     });
     setSalvandoId(null);
-    const erro = (data as { erro?: string } | null)?.erro ?? error?.message;
+    const erro = (data as { erro?: string } | null)?.erro ?? mensagemErroEdge(error);
     if (erro) {
       toast.error(erro);
       return;
