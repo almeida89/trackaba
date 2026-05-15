@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mic, Paperclip, Save, FileText, FileSignature, Lock, Download } from "lucide-react";
+import { Save, FileText, FileSignature, Lock, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { FormularioABC } from "./FormularioABC";
 import { ListaReforcadores } from "./ListaReforcadores";
 import { RegistrosProgramas } from "./RegistrosProgramas";
 import { exportarSessaoPdf } from "./exportarSessaoPdf";
+import { AnexosCrianca } from "@/componentes/criancas/AnexosCrianca";
 
 const HUMORES: { valor: HumorCrianca; emoji: string; rotulo: string }[] = [
   { valor: "otimo", emoji: "😄", rotulo: "Ótimo" },
@@ -185,12 +186,7 @@ export function DetalhesSessao({ sessao, aoSalvar, aoFinalizar, aoAssinar }: Pro
         <TabsContent value="notas" className="space-y-4 mt-4">
           <Card className="p-4 space-y-4">
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <Label className="text-sm font-medium">Nota geral da sessão</Label>
-                <Button variant="ghost" size="sm" className="gap-1.5 h-7" disabled>
-                  <Mic className="h-3.5 w-3.5" /> Ditar
-                </Button>
-              </div>
+              <Label className="text-sm font-medium mb-1.5 block">Nota geral da sessão</Label>
               <Textarea
                 rows={4}
                 placeholder="Descreva o desempenho geral, engajamento e contexto da sessão..."
@@ -242,12 +238,13 @@ export function DetalhesSessao({ sessao, aoSalvar, aoFinalizar, aoAssinar }: Pro
         </TabsContent>
 
         <TabsContent value="anexos" className="mt-4">
-          <Card className="p-8 border-dashed text-center">
-            <Paperclip className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
-              {editavel.anexos.length} anexo(s) nesta sessão
-            </p>
-          </Card>
+          <AnexosCrianca
+            criancaId={editavel.criancaId}
+            pasta={`sessoes/${editavel.id}`}
+            titulo="Anexos da sessão"
+            descricao="Documentos, fotos ou registros pertinentes a esta sessão. Máx. 20MB por arquivo."
+            bloqueado={bloqueada}
+          />
         </TabsContent>
       </Tabs>
       </fieldset>
