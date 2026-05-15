@@ -37,7 +37,8 @@ export async function corsHeadersPara(
   admin: SupabaseClient,
 ): Promise<Record<string, string>> {
   const origem = req.headers.get("origin") ?? "";
-  let permitida = FALLBACK_ORIGENS.has(origem);
+  const previewLovable = /^https:\/\/(?:id-preview--)?[a-z0-9-]+\.lovable\.app$/i;
+  let permitida = FALLBACK_ORIGENS.has(origem) || previewLovable.test(origem);
 
   if (!permitida && origem) {
     try {
