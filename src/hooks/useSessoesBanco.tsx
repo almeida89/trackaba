@@ -225,32 +225,68 @@ export function useSessoesBanco() {
       // Sincroniza resultados_programa: estratégia simples — apaga e reinsere
       await supabase.from("resultados_programa").delete().eq("sessao_id", s.id);
       if (s.registros.length > 0) {
-        const linhas = s.registros
-          .filter((r) => r.programaNome.trim())
-          .map((r) => ({
+        const registrosValidos = s.registros.filter((r) => r.programaNome.trim());
+
+        // Carrega programas ATIVOS da criança para resolver programa_id real
+        const { data: progs, error: errProgs } = await supabase
+          .from("programas")
+          .select("id, nome, ativo")
+          .eq("crianca_id", s.criancaId);
+
+        if (errProgs) {
+          toast.error("Erro ao validar programas: " + errProgs.message);
+          return false;
+        }
+
+        const mapaProg = new Map(
+          (progs ?? [])
+            .filter((p: any) => p.ativo !== false)
+            .map((p: any) => [p.nome.trim().toLowerCase(), p.id])
+        );
+
+        const linhas: any[] = [];
+        const naoResolvidos: string[] = [];
+        for (const r of registrosValidos) {
+          const programaId = mapaProg.get(r.programaNome.trim().toLowerCase());
+          // Guard: bloqueia escrita se programa_id ausente/inválido
+          if (!programaId) {
+            naoResolvidos.push(r.programaNome);
+            console.warn("[salvarSessao] programa_id não resolvido", {
+              sessaoId: s.id,
+              criancaId: s.criancaId,
+              programaNome: r.programaNome,
+            });
+            continue;
+          }
+          linhas.push({
             sessao_id: s.id,
-            programa_id: s.criancaId, // fallback (programa_id é NOT NULL); usa criancaId como placeholder válido
+            programa_id: programaId,
             programa_nome: r.programaNome,
             objetivo: r.objetivo,
             tentativas: r.tentativas,
             acertos: r.acertos,
             nivel: r.nivel,
             observacao: r.observacao ?? null,
-          }));
-        // Tenta resolver programa_id real via tabela programas (match por nome+criança)
-        const { data: progs } = await supabase
-          .from("programas")
-          .select("id, nome")
-          .eq("crianca_id", s.criancaId);
-        const mapaProg = new Map((progs ?? []).map((p: any) => [p.nome, p.id]));
-        const linhasResolvidas = linhas.map((l) => ({
-          ...l,
-          programa_id: mapaProg.get(l.programa_nome) ?? l.programa_id,
-        }));
-        const { error: errR } = await supabase.from("resultados_programa").insert(linhasResolvidas as any);
-        if (errR) {
-          toast.error("Erro ao salvar registros: " + errR.message);
+          });
+        }
+
+        if (naoResolvidos.length > 0) {
+          toast.error(
+            `Programa(s) não encontrado(s) ou inativo(s): ${naoResolvidos.join(", ")}. Crie/reative o programa antes de salvar os registros.`
+          );
           return false;
+        }
+
+        if (linhas.length > 0) {
+          console.debug("[salvarSessao] inserindo resultados_programa", {
+            sessaoId: s.id,
+            programaIds: linhas.map((l) => l.programa_id),
+          });
+          const { error: errR } = await supabase.from("resultados_programa").insert(linhas as any);
+          if (errR) {
+            toast.error("Erro ao salvar registros: " + errR.message);
+            return false;
+          }
         }
       }
 
