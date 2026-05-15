@@ -21,10 +21,7 @@ const HEADERS_BASE = {
 };
 
 export function clienteAdmin(): SupabaseClient {
-  return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  return createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }
 
 export function ipDoCliente(req: Request): string {
@@ -33,10 +30,7 @@ export function ipDoCliente(req: Request): string {
   return req.headers.get("cf-connecting-ip") ?? "desconhecido";
 }
 
-export async function corsHeadersPara(
-  req: Request,
-  admin: SupabaseClient,
-): Promise<Record<string, string>> {
+export async function corsHeadersPara(req: Request, admin: SupabaseClient): Promise<Record<string, string>> {
   const origem = req.headers.get("origin") ?? "";
   // Aceita tanto previews id-preview--<hash> quanto subdomínios estáveis da Lovable.
   const previewLovable = /^https:\/\/(?:id-preview--[a-f0-9-]+|[a-z0-9-]+)\.lovable\.app$/i;
@@ -82,11 +76,7 @@ export async function checarRateLimit(
   return data === true;
 }
 
-export function jsonResp(
-  payload: unknown,
-  status: number,
-  headers: Record<string, string>,
-): Response {
+export function jsonResp(payload: unknown, status: number, headers: Record<string, string>): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: { ...headers, "Content-Type": "application/json" },
