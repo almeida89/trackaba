@@ -65,13 +65,6 @@ const secoesMenu: SecaoMenu[] = [
     ],
   },
   {
-    titulo: "Análise",
-    itens: [
-      { titulo: "Relatórios", url: "/relatorios", icone: FileText },
-      { titulo: "Gráficos", url: "/graficos", icone: BarChart3 },
-    ],
-  },
-  {
     titulo: "Administração",
     itens: [
       { titulo: "Funcionários", url: "/funcionarios", icone: Users },
