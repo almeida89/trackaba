@@ -16,13 +16,13 @@ import ListaCriancas from "@/paginas/ListaCriancas";
 import PastaCrianca from "@/paginas/PastaCrianca";
 import PaginaModulo from "@/paginas/PaginaModulo";
 import PaginaAgenda from "@/paginas/PaginaAgenda";
-import PaginaGraficos from "@/paginas/PaginaGraficos";
+
 import PaginaProgramas from "@/paginas/PaginaProgramas";
 import PaginaSessoes from "@/paginas/PaginaSessoes";
 import PaginaEscola from "@/paginas/PaginaEscola";
 import PaginaFuncionarios from "@/paginas/PaginaFuncionarios";
 import PaginaFamilia from "@/paginas/PaginaFamilia";
-import PaginaRelatorios from "@/paginas/PaginaRelatorios";
+
 import PaginaAvaliacoes from "@/paginas/PaginaAvaliacoes";
 import PaginaConfiguracoes from "@/paginas/PaginaConfiguracoes";
 import PaginaLogs from "@/paginas/PaginaLogs";
@@ -45,8 +45,6 @@ const RotasInternas = () => (
       <Route path="/agenda" element={<PaginaAgenda />} />
       <Route path="/escola" element={<PaginaEscola />} />
       <Route path="/familia" element={<PaginaFamilia />} />
-      <Route path="/relatorios" element={<PaginaRelatorios />} />
-      <Route path="/graficos" element={<PaginaGraficos />} />
       <Route path="/automacoes" element={<PaginaModulo />} />
       <Route path="/usuarios" element={<RotaAdmin><PaginaUsuarios /></RotaAdmin>} />
       <Route path="/configuracoes" element={<PaginaConfiguracoes />} />

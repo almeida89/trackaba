@@ -225,7 +225,7 @@ export default function PastaCrianca() {
       case "historico":
         return <HistoricoCrianca criancaId={crianca.id} />;
       case "graficos":
-        return <GraficosCrianca criancaNome={crianca.nome} />;
+        return <GraficosCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "relatorios":
         return <RelatoriosCrianca crianca={crianca} />;
       default:
