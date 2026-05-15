@@ -19,6 +19,14 @@ const TIPOS_ACEITOS = [
 
 interface Props {
   criancaId: string;
+  /** Subpasta dentro da pasta da criança (ex.: `sessoes/${sessaoId}`). Padrão: raiz da criança. */
+  pasta?: string;
+  /** Override de título do card. */
+  titulo?: string;
+  /** Override de descrição do card. */
+  descricao?: string;
+  /** Quando true, desabilita upload e remoção (ex.: sessão assinada). */
+  bloqueado?: boolean;
 }
 
 interface Arquivo {
@@ -45,26 +53,27 @@ function formatarData(iso: string | null): string {
   });
 }
 
-export function AnexosCrianca({ criancaId }: Props) {
+export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado = false }: Props) {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastando, setArrastando] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  const queryKey = ["anexos-crianca", criancaId];
+  const pastaBase = pasta ? `${criancaId}/${pasta}` : criancaId;
+  const queryKey = ["anexos-crianca", pastaBase];
 
   const { data: arquivos = [], isLoading } = useQuery({
     queryKey,
     queryFn: async (): Promise<Arquivo[]> => {
       const { data, error } = await supabase.storage
         .from(BUCKET)
-        .list(criancaId, { limit: 100, sortBy: { column: "updated_at", order: "desc" } });
+        .list(pastaBase, { limit: 100, sortBy: { column: "updated_at", order: "desc" } });
       if (error) throw error;
       return (data ?? [])
         .filter((f) => f.name && !f.name.startsWith("."))
         .map((f) => ({
           name: f.name,
-          path: `${criancaId}/${f.name}`,
+          path: `${pastaBase}/${f.name}`,
           size: (f.metadata?.size as number) ?? 0,
           updated_at: f.updated_at ?? f.created_at ?? null,
         }));
