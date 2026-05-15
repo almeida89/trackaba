@@ -6,6 +6,7 @@ import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-
 
 const FALLBACK_ORIGENS = new Set([
   "https://trackaba.lovable.app",
+  "https://preview--trackaba.lovable.app",
   "https://id-preview--09a24013-092f-4773-b13b-226e004ad470.lovable.app",
   "http://localhost:5173",
   "http://localhost:8080",
@@ -37,7 +38,9 @@ export async function corsHeadersPara(
   admin: SupabaseClient,
 ): Promise<Record<string, string>> {
   const origem = req.headers.get("origin") ?? "";
-  let permitida = FALLBACK_ORIGENS.has(origem);
+  // Aceita tanto previews id-preview--<hash> quanto subdomínios estáveis da Lovable.
+  const previewLovable = /^https:\/\/(?:id-preview--[a-f0-9-]+|[a-z0-9-]+)\.lovable\.app$/i;
+  let permitida = FALLBACK_ORIGENS.has(origem) || previewLovable.test(origem);
 
   if (!permitida && origem) {
     try {
