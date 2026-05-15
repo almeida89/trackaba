@@ -102,7 +102,7 @@ export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado =
         }
         const ext = arquivo.name.split(".").pop()?.toLowerCase() || "bin";
         const base = arquivo.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 60);
-        const caminho = `${criancaId}/${Date.now()}-${base}.${ext}`;
+        const caminho = `${pastaBase}/${Date.now()}-${base}.${ext}`;
         const { error } = await supabase.storage
           .from(BUCKET)
           .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
@@ -117,7 +117,7 @@ export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado =
       if (ok > 0) toast.success(`${ok} arquivo(s) enviado(s)`);
       queryClient.invalidateQueries({ queryKey });
     },
-    [criancaId, queryClient]
+    [pastaBase, queryClient]
   );
 
   const aoSelecionar = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,9 +163,10 @@ export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado =
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-heading">Anexos</CardTitle>
+        <CardTitle className="text-lg font-heading">{titulo ?? "Anexos"}</CardTitle>
         <CardDescription>
-          Documentos, laudos, fotos e relatórios da criança. Máx. {MAX_MB}MB por arquivo.
+          {descricao ??
+            `Documentos, laudos, fotos e relatórios da criança. Máx. ${MAX_MB}MB por arquivo.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
