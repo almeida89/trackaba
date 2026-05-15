@@ -9,7 +9,6 @@ import {
   Search,
   Filter,
   CheckCircle2,
-  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -201,9 +200,22 @@ export function RelatoriosCrianca({ crianca }: Props) {
             Gere relatórios em PDF e consulte o histórico de emissões de {crianca.nome}
           </p>
         </div>
-        <Button variant="outline" onClick={() => window.print()} className="gap-2 print:hidden">
-          <Printer className="h-4 w-4" />
-          Imprimir página
+        <Button
+          variant="outline"
+          onClick={() =>
+            gerarRelatorioPDF({
+              tipo: "consolidado",
+              criancaId: crianca.id,
+              criancaNome: crianca.nome,
+              dataInicio: trintaDiasAtras(),
+              dataFim: hojeISO(),
+              responsavelClinica: responsavel,
+            })
+          }
+          className="gap-2 print:hidden"
+        >
+          <Download className="h-4 w-4" />
+          Baixar PDF consolidado
         </Button>
       </div>
 

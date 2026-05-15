@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, TrendingUp, Target, Activity, Award, Loader2 } from "lucide-react";
+import { BarChart3, TrendingUp, Target, Activity, Award, Loader2, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NIVEIS_DESEMPENHO } from "@/componentes/graficos/dadosGraficos";
@@ -9,6 +10,7 @@ import { GraficoEvolucao } from "@/componentes/graficos/GraficoEvolucao";
 import { GraficoAcertos } from "@/componentes/graficos/GraficoAcertos";
 import { GraficoDistribuicao } from "@/componentes/graficos/GraficoDistribuicao";
 import { useGraficosBanco } from "@/hooks/useGraficosBanco";
+import { gerarRelatorioPDF } from "@/componentes/relatorios/gerarRelatorioPdf";
 
 interface Props {
   criancaId: string;
@@ -16,7 +18,7 @@ interface Props {
 }
 
 export function GraficosCrianca({ criancaId, criancaNome }: Props) {
-  const { criancas, carregando } = useGraficosBanco();
+  const { criancas, carregando } = useGraficosBanco(criancaId);
   const [programaId, setProgramaId] = useState<string>("");
 
   const crianca = useMemo(
@@ -61,29 +63,64 @@ export function GraficosCrianca({ criancaId, criancaNome }: Props) {
     );
   }
 
-  if (!crianca || !programa) {
+  const exportarPDF = () => {
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(inicio.getDate() - 30);
+    gerarRelatorioPDF({
+      tipo: "consolidado",
+      criancaId,
+      criancaNome,
+      dataInicio: inicio.toISOString().split("T")[0],
+      dataFim: hoje.toISOString().split("T")[0],
+      observacoes: programa
+        ? `Programa em destaque: ${programa.nome} (${programa.disciplina}).`
+        : undefined,
+    });
+  };
+
+  const headerExport = (
+    <div className="flex items-start justify-between flex-wrap gap-4">
+      <div>
+        <h2 className="text-xl font-heading font-bold text-foreground">Gráficos & Análises</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Evolução individual de {criancaNome} em seus programas terapêuticos
+        </p>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Badge variant="outline" className="gap-1.5 py-1.5">
+          <Activity className="h-3.5 w-3.5 text-primary" />
+          Análise por programa individual
+        </Badge>
+        <Button variant="outline" size="sm" onClick={exportarPDF} className="gap-2">
+          <Download className="h-4 w-4" /> Exportar PDF
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (!crianca || !programa || programa.registros.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <BarChart3 className="h-10 w-10 mb-3 opacity-40" />
-        <p className="text-sm">Nenhum programa com registros disponível para análise de {criancaNome}.</p>
+      <div className="space-y-6">
+        {headerExport}
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <BarChart3 className="h-10 w-10 mb-3 opacity-40" />
+            <p className="text-sm text-center max-w-md">
+              Ainda não há registros de sessão suficientes para gerar gráficos de{" "}
+              <strong className="text-foreground">{criancaNome}</strong>.
+              <br />
+              Cadastre programas e registre resultados nas sessões para visualizar a evolução.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h2 className="text-xl font-heading font-bold text-foreground">Gráficos & Análises</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Evolução individual de {crianca.nome} em seus programas terapêuticos
-          </p>
-        </div>
-        <Badge variant="outline" className="gap-1.5 py-1.5">
-          <Activity className="h-3.5 w-3.5 text-primary" />
-          Análise por programa individual
-        </Badge>
-      </div>
+      {headerExport}
 
       {/* Seletor de programa */}
       <Card>

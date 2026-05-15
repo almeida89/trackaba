@@ -35,7 +35,13 @@ function mapearDominio(d: string): ProgramaCrianca["disciplina"] {
   return "ABA";
 }
 
-function mapearNivel(nivel: string): NivelDesempenho {
+const NIVEIS_VALIDOS: NivelDesempenho[] = ["-", "AFT", "AFL", "AG", "IND", "+"];
+
+function mapearNivel(nivel: string | null | undefined): NivelDesempenho {
+  if (!nivel) return "-";
+  // resultados_programa.nivel já vem como sigla ('AG', 'AFT', ...) por padrão
+  if ((NIVEIS_VALIDOS as string[]).includes(nivel)) return nivel as NivelDesempenho;
+  // programas.nivel_desempenho usa enum com nomes longos
   const map: Record<string, NivelDesempenho> = {
     linha_base: "-",
     ajuda_fisica_total: "AFT",
@@ -47,22 +53,30 @@ function mapearNivel(nivel: string): NivelDesempenho {
   return map[nivel] ?? "-";
 }
 
-export function useGraficosBanco() {
+/**
+ * Carrega dados de gráficos. Quando `criancaId` é informado, filtra no banco
+ * (mais leve e correto). Sem id, mantém comportamento global anterior.
+ * O nível de cada ponto é lido do REGISTRO (resultados_programa.nivel),
+ * não do campo único do programa, garantindo a curva de aprendizagem real.
+ */
+export function useGraficosBanco(criancaId?: string) {
   const [criancas, setCriancas] = useState<CriancaGrafico[]>([]);
   const [carregando, setCarregando] = useState(true);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
 
-    const [{ data: criancasData }, { data: programasData }, { data: resultadosData }] =
-      await Promise.all([
-        supabase.from("criancas").select("*").eq("ativo", true).order("nome"),
-        supabase.from("programas").select("*").eq("ativo", true),
-        supabase
-          .from("resultados_programa")
-          .select("*, sessoes(data_sessao)")
-          .order("criado_em"),
-      ]);
+    let qCriancas = supabase.from("criancas").select("*").eq("ativo", true).order("nome");
+    let qProgramas = supabase.from("programas").select("*").eq("ativo", true);
+    if (criancaId) {
+      qCriancas = qCriancas.eq("id", criancaId);
+      qProgramas = qProgramas.eq("crianca_id", criancaId);
+    }
+
+    const [{ data: criancasData }, { data: programasData }] = await Promise.all([
+      qCriancas,
+      qProgramas,
+    ]);
 
     if (!criancasData) {
       toast.error("Erro ao carregar dados de gráficos");
@@ -70,15 +84,27 @@ export function useGraficosBanco() {
       return;
     }
 
+    const programaIds = (programasData ?? []).map((p) => p.id);
+    let resultadosData: any[] = [];
+    if (programaIds.length > 0) {
+      const { data } = await supabase
+        .from("resultados_programa")
+        .select("*, sessoes(data_sessao)")
+        .in("programa_id", programaIds)
+        .order("criado_em");
+      resultadosData = data ?? [];
+    }
+
     const lista: CriancaGrafico[] = criancasData.map((c) => {
       const programasCrianca = (programasData ?? []).filter((p) => p.crianca_id === c.id);
       const programas: ProgramaCrianca[] = programasCrianca.map((p) => {
-        const registros: RegistroSessao[] = (resultadosData ?? [])
+        const registros: RegistroSessao[] = resultadosData
           .filter((r: any) => r.programa_id === p.id)
           .map((r: any) => ({
             data: r.sessoes?.data_sessao ?? r.criado_em,
-            nivel: mapearNivel(p.nivel_desempenho),
-            tentativasCorretas: r.acertos,
+            // PER-RECORD level — corrige curva plana do bug anterior
+            nivel: mapearNivel(r.nivel),
+            tentativasCorretas: r.acertos ?? 0,
             tentativasTotais: r.tentativas || 1,
             observacao: r.observacao ?? undefined,
           }))
@@ -91,16 +117,7 @@ export function useGraficosBanco() {
           tipo: "Aquisição",
           objetivo: p.meta ?? p.descricao ?? "",
           criadoEm: p.criado_em,
-          registros: registros.length
-            ? registros
-            : [
-                {
-                  data: new Date().toISOString(),
-                  nivel: mapearNivel(p.nivel_desempenho),
-                  tentativasCorretas: 0,
-                  tentativasTotais: 1,
-                },
-              ],
+          registros,
         };
       });
 
@@ -113,9 +130,10 @@ export function useGraficosBanco() {
       };
     });
 
-    setCriancas(lista.filter((c) => c.programas.length > 0));
+    // Mantém crianças mesmo sem programas para empty-state controlado no componente
+    setCriancas(lista);
     setCarregando(false);
-  }, []);
+  }, [criancaId]);
 
   useEffect(() => {
     carregar();

@@ -19,6 +19,14 @@ const TIPOS_ACEITOS = [
 
 interface Props {
   criancaId: string;
+  /** Subpasta dentro da pasta da criança (ex.: `sessoes/${sessaoId}`). Padrão: raiz da criança. */
+  pasta?: string;
+  /** Override de título do card. */
+  titulo?: string;
+  /** Override de descrição do card. */
+  descricao?: string;
+  /** Quando true, desabilita upload e remoção (ex.: sessão assinada). */
+  bloqueado?: boolean;
 }
 
 interface Arquivo {
@@ -45,26 +53,27 @@ function formatarData(iso: string | null): string {
   });
 }
 
-export function AnexosCrianca({ criancaId }: Props) {
+export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado = false }: Props) {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [arrastando, setArrastando] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  const queryKey = ["anexos-crianca", criancaId];
+  const pastaBase = pasta ? `${criancaId}/${pasta}` : criancaId;
+  const queryKey = ["anexos-crianca", pastaBase];
 
   const { data: arquivos = [], isLoading } = useQuery({
     queryKey,
     queryFn: async (): Promise<Arquivo[]> => {
       const { data, error } = await supabase.storage
         .from(BUCKET)
-        .list(criancaId, { limit: 100, sortBy: { column: "updated_at", order: "desc" } });
+        .list(pastaBase, { limit: 100, sortBy: { column: "updated_at", order: "desc" } });
       if (error) throw error;
       return (data ?? [])
         .filter((f) => f.name && !f.name.startsWith("."))
         .map((f) => ({
           name: f.name,
-          path: `${criancaId}/${f.name}`,
+          path: `${pastaBase}/${f.name}`,
           size: (f.metadata?.size as number) ?? 0,
           updated_at: f.updated_at ?? f.created_at ?? null,
         }));
@@ -93,7 +102,7 @@ export function AnexosCrianca({ criancaId }: Props) {
         }
         const ext = arquivo.name.split(".").pop()?.toLowerCase() || "bin";
         const base = arquivo.name.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9-_]/g, "_").slice(0, 60);
-        const caminho = `${criancaId}/${Date.now()}-${base}.${ext}`;
+        const caminho = `${pastaBase}/${Date.now()}-${base}.${ext}`;
         const { error } = await supabase.storage
           .from(BUCKET)
           .upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
@@ -108,7 +117,7 @@ export function AnexosCrianca({ criancaId }: Props) {
       if (ok > 0) toast.success(`${ok} arquivo(s) enviado(s)`);
       queryClient.invalidateQueries({ queryKey });
     },
-    [criancaId, queryClient]
+    [pastaBase, queryClient]
   );
 
   const aoSelecionar = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,48 +163,55 @@ export function AnexosCrianca({ criancaId }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg font-heading">Anexos</CardTitle>
+        <CardTitle className="text-lg font-heading">{titulo ?? "Anexos"}</CardTitle>
         <CardDescription>
-          Documentos, laudos, fotos e relatórios da criança. Máx. {MAX_MB}MB por arquivo.
+          {descricao ??
+            `Documentos, laudos, fotos e relatórios da criança. Máx. ${MAX_MB}MB por arquivo.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setArrastando(true);
-          }}
-          onDragLeave={() => setArrastando(false)}
-          onDrop={aoSoltar}
-          onClick={() => !enviando && inputRef.current?.click()}
-          className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-            arrastando
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50 hover:bg-muted/30",
-            enviando && "opacity-60 pointer-events-none"
-          )}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept={TIPOS_ACEITOS.join(",")}
-            className="hidden"
-            onChange={aoSelecionar}
-          />
-          <div className="flex flex-col items-center gap-2">
-            {enviando ? (
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            ) : (
-              <Upload className="h-8 w-8 text-muted-foreground" />
-            )}
-            <p className="text-sm font-medium text-foreground">
-              {enviando ? "Enviando arquivos..." : "Arraste arquivos aqui ou clique para selecionar"}
-            </p>
-            <p className="text-xs text-muted-foreground">PDF, JPG, PNG, WEBP ou GIF</p>
+        {bloqueado ? (
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            Sessão assinada — upload e remoção de anexos bloqueados.
           </div>
-        </div>
+        ) : (
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setArrastando(true);
+            }}
+            onDragLeave={() => setArrastando(false)}
+            onDrop={aoSoltar}
+            onClick={() => !enviando && inputRef.current?.click()}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+              arrastando
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50 hover:bg-muted/30",
+              enviando && "opacity-60 pointer-events-none"
+            )}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              accept={TIPOS_ACEITOS.join(",")}
+              className="hidden"
+              onChange={aoSelecionar}
+            />
+            <div className="flex flex-col items-center gap-2">
+              {enviando ? (
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              ) : (
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              )}
+              <p className="text-sm font-medium text-foreground">
+                {enviando ? "Enviando arquivos..." : "Arraste arquivos aqui ou clique para selecionar"}
+              </p>
+              <p className="text-xs text-muted-foreground">PDF, JPG, PNG, WEBP ou GIF</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -251,9 +267,9 @@ export function AnexosCrianca({ criancaId }: Props) {
                         onClick={() => {
                           if (confirm(`Remover "${nomeBonito(arq.name)}"?`)) mutRemover.mutate(arq);
                         }}
-                        disabled={removendo}
+                        disabled={removendo || bloqueado}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        title="Remover"
+                        title={bloqueado ? "Sessão assinada — remoção bloqueada" : "Remover"}
                       >
                         {removendo ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -6,14 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CriancaDetalhe } from "@/hooks/useCrianca";
+import { mascararTelefone, mascararCpf } from "@/lib/mascaras";
 
 export type CampoCrianca = {
   campo: keyof CriancaDetalhe;
   rotulo: string;
   placeholder?: string;
-  tipo?: "text" | "tel" | "textarea";
+  tipo?: "text" | "tel" | "cpf" | "textarea";
   colSpan?: 1 | 2;
 };
+
+function aplicarMascara(tipo: CampoCrianca["tipo"], valor: string): string {
+  if (tipo === "tel") return mascararTelefone(valor);
+  if (tipo === "cpf") return mascararCpf(valor);
+  return valor;
+}
 
 interface Props {
   titulo: string;
@@ -106,11 +113,15 @@ export function FormularioCamposCrianca({ titulo, descricao, crianca, campos, sa
                   ) : (
                     <Input
                       id={c.campo as string}
-                      type={c.tipo || "text"}
+                      type={c.tipo === "tel" ? "tel" : "text"}
+                      inputMode={c.tipo === "tel" || c.tipo === "cpf" ? "numeric" : undefined}
                       value={valor}
                       placeholder={c.placeholder}
                       onChange={(e) =>
-                        setValores((v) => ({ ...v, [c.campo as string]: e.target.value }))
+                        setValores((v) => ({
+                          ...v,
+                          [c.campo as string]: aplicarMascara(c.tipo, e.target.value),
+                        }))
                       }
                     />
                   )

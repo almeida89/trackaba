@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCriancas } from "@/hooks/useCriancas";
 import { criancaSchema, type CriancaForm } from "@/schemas/crianca";
+import { mascararTelefone } from "@/lib/mascaras";
 import { toast } from "sonner";
 
 interface Props {
@@ -123,8 +124,10 @@ export function DialogoNovaCrianca({ aberto, aoFechar }: Props) {
               <Label htmlFor="tel">Telefone</Label>
               <Input
                 id="tel"
+                inputMode="tel"
+                placeholder="(11) 91234-5678"
                 value={form.telefone_contato}
-                onChange={(e) => set("telefone_contato", e.target.value)}
+                onChange={(e) => set("telefone_contato", mascararTelefone(e.target.value))}
               />
               {erros.telefone_contato && (
                 <p className="text-xs text-destructive mt-1">{erros.telefone_contato}</p>
