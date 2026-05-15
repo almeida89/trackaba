@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, TrendingUp, Target, Activity, Award, Loader2 } from "lucide-react";
+import { BarChart3, TrendingUp, Target, Activity, Award, Loader2, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NIVEIS_DESEMPENHO } from "@/componentes/graficos/dadosGraficos";
@@ -9,6 +10,7 @@ import { GraficoEvolucao } from "@/componentes/graficos/GraficoEvolucao";
 import { GraficoAcertos } from "@/componentes/graficos/GraficoAcertos";
 import { GraficoDistribuicao } from "@/componentes/graficos/GraficoDistribuicao";
 import { useGraficosBanco } from "@/hooks/useGraficosBanco";
+import { gerarRelatorioPDF } from "@/componentes/relatorios/gerarRelatorioPdf";
 
 interface Props {
   criancaId: string;
@@ -16,7 +18,7 @@ interface Props {
 }
 
 export function GraficosCrianca({ criancaId, criancaNome }: Props) {
-  const { criancas, carregando } = useGraficosBanco();
+  const { criancas, carregando } = useGraficosBanco(criancaId);
   const [programaId, setProgramaId] = useState<string>("");
 
   const crianca = useMemo(
