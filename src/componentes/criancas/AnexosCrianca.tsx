@@ -170,42 +170,48 @@ export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado =
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setArrastando(true);
-          }}
-          onDragLeave={() => setArrastando(false)}
-          onDrop={aoSoltar}
-          onClick={() => !enviando && inputRef.current?.click()}
-          className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-            arrastando
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50 hover:bg-muted/30",
-            enviando && "opacity-60 pointer-events-none"
-          )}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept={TIPOS_ACEITOS.join(",")}
-            className="hidden"
-            onChange={aoSelecionar}
-          />
-          <div className="flex flex-col items-center gap-2">
-            {enviando ? (
-              <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            ) : (
-              <Upload className="h-8 w-8 text-muted-foreground" />
-            )}
-            <p className="text-sm font-medium text-foreground">
-              {enviando ? "Enviando arquivos..." : "Arraste arquivos aqui ou clique para selecionar"}
-            </p>
-            <p className="text-xs text-muted-foreground">PDF, JPG, PNG, WEBP ou GIF</p>
+        {bloqueado ? (
+          <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+            Sessão assinada — upload e remoção de anexos bloqueados.
           </div>
-        </div>
+        ) : (
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setArrastando(true);
+            }}
+            onDragLeave={() => setArrastando(false)}
+            onDrop={aoSoltar}
+            onClick={() => !enviando && inputRef.current?.click()}
+            className={cn(
+              "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+              arrastando
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50 hover:bg-muted/30",
+              enviando && "opacity-60 pointer-events-none"
+            )}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              accept={TIPOS_ACEITOS.join(",")}
+              className="hidden"
+              onChange={aoSelecionar}
+            />
+            <div className="flex flex-col items-center gap-2">
+              {enviando ? (
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              ) : (
+                <Upload className="h-8 w-8 text-muted-foreground" />
+              )}
+              <p className="text-sm font-medium text-foreground">
+                {enviando ? "Enviando arquivos..." : "Arraste arquivos aqui ou clique para selecionar"}
+              </p>
+              <p className="text-xs text-muted-foreground">PDF, JPG, PNG, WEBP ou GIF</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -261,9 +267,9 @@ export function AnexosCrianca({ criancaId, pasta, titulo, descricao, bloqueado =
                         onClick={() => {
                           if (confirm(`Remover "${nomeBonito(arq.name)}"?`)) mutRemover.mutate(arq);
                         }}
-                        disabled={removendo}
+                        disabled={removendo || bloqueado}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        title="Remover"
+                        title={bloqueado ? "Sessão assinada — remoção bloqueada" : "Remover"}
                       >
                         {removendo ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
