@@ -166,7 +166,9 @@ export default function PaginaUsuarios() {
       },
     });
     setCriando(false);
-    const erro = (data as { erro?: string } | null)?.erro ?? mensagemErroEdge(error);
+    const erroApi = (data as { erro?: string } | null)?.erro;
+    const erroInvoke = error ? mensagemErroEdge(error) : null;
+    const erro = erroApi ?? erroInvoke;
     if (erro) {
       toast.error(erro);
       return;
@@ -183,7 +185,9 @@ export default function PaginaUsuarios() {
       body: { acao: "remover", user_id: userId },
     });
     setSalvandoId(null);
-    const erro = (data as { erro?: string } | null)?.erro ?? mensagemErroEdge(error);
+    const erroApi = (data as { erro?: string } | null)?.erro;
+    const erroInvoke = error ? mensagemErroEdge(error) : null;
+    const erro = erroApi ?? erroInvoke;
     if (erro) {
       toast.error(erro);
       return;
