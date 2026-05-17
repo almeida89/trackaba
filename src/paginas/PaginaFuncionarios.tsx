@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   UserCheck,
@@ -23,14 +23,13 @@ import {
 } from "@/components/ui/select";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
 import { DialogoFuncionario } from "@/componentes/funcionarios/DialogoFuncionario";
-import {
-  cargosDisponiveis,
-  funcionariosMock,
-} from "@/componentes/funcionarios/dadosFuncionarios";
+import { cargosDisponiveis } from "@/componentes/funcionarios/dadosFuncionarios";
 import {
   Funcionario,
   StatusFuncionario,
 } from "@/componentes/funcionarios/tiposFuncionarios";
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
 const rotuloStatus: Record<StatusFuncionario, string> = {
@@ -38,6 +37,34 @@ const rotuloStatus: Record<StatusFuncionario, string> = {
   ferias: "Em férias",
   afastado: "Afastado",
   inativo: "Inativo",
+};
+
+
+
+type CargoDb = Database["public"]["Enums"]["cargo_funcionario"];
+
+type FuncionarioRow = Database["public"]["Tables"]["funcionarios"]["Row"];
+
+const cargoAppParaDb: Record<Funcionario["cargo"], CargoDb> = {
+  "Analista de Comportamento": "supervisor",
+  "Terapeuta ABA": "terapeuta",
+  "Psicólogo(a)": "psicologo",
+  "Fonoaudiólogo(a)": "outro",
+  "Terapeuta Ocupacional": "outro",
+  "Coordenador(a) Clínico(a)": "coordenador",
+  "Supervisor(a)": "supervisor",
+  "Recepção": "recepcionista",
+  Administrativo: "admin",
+};
+
+const cargoDbParaApp: Record<CargoDb, Funcionario["cargo"]> = {
+  psicologo: "Psicólogo(a)",
+  coordenador: "Coordenador(a) Clínico(a)",
+  recepcionista: "Recepção",
+  admin: "Administrativo",
+  terapeuta: "Terapeuta ABA",
+  supervisor: "Supervisor(a)",
+  outro: "Analista de Comportamento",
 };
 
 const corStatus: Record<StatusFuncionario, string> = {
@@ -54,9 +81,33 @@ const corNivel: Record<string, string> = {
   visualizador: "bg-muted/50 text-muted-foreground border-border",
 };
 
+const paraStatus = (ativo: boolean): StatusFuncionario => (ativo ? "ativo" : "inativo");
+
+const iniciaisDoNome = (nome: string) => {
+  const partes = nome.trim().split(" ").filter(Boolean);
+  return ((partes[0]?.[0] || "") + (partes[partes.length - 1]?.[0] || "")).toUpperCase();
+};
+
+const mapearFuncionarioDoBanco = (f: FuncionarioRow): Funcionario => ({
+  id: f.id,
+  nome: f.nome_completo,
+  email: f.email,
+  telefone: f.telefone || "",
+  cargo: cargoDbParaApp[f.cargo] ?? "Terapeuta ABA",
+  registroProfissional: f.registro_conselho || "",
+  especialidades: f.especialidade ? f.especialidade.split(",").map((s) => s.trim()).filter(Boolean) : [],
+  status: paraStatus(f.ativo),
+  nivelAcesso: "operacional",
+  dataAdmissao: f.data_admissao || new Date().toISOString().slice(0, 10),
+  cargaHorariaSemanal: 0,
+  criancasAtendidas: 0,
+  sessoesNoMes: 0,
+  iniciais: iniciaisDoNome(f.nome_completo),
+});
+
 export default function PaginaFuncionarios() {
-  const [funcionarios, setFuncionarios] =
-    useState<Funcionario[]>(funcionariosMock);
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroCargo, setFiltroCargo] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
@@ -88,6 +139,27 @@ export default function PaginaFuncionarios() {
     return { total: funcionarios.length, ativos, ferias, afastados };
   }, [funcionarios]);
 
+  const carregarFuncionarios = async () => {
+    setCarregando(true);
+    const { data, error } = await supabase
+      .from("funcionarios")
+      .select("*")
+      .order("criado_em", { ascending: false });
+
+    if (error) {
+      toast.error("Não foi possível carregar funcionários");
+      setCarregando(false);
+      return;
+    }
+
+    setFuncionarios((data || []).map(mapearFuncionarioDoBanco));
+    setCarregando(false);
+  };
+
+  useEffect(() => {
+    void carregarFuncionarios();
+  }, []);
+
   const abrirNovo = () => {
     setEditando(null);
     setDialogoAberto(true);
@@ -98,15 +170,51 @@ export default function PaginaFuncionarios() {
     setDialogoAberto(true);
   };
 
-  const salvar = (f: Funcionario) => {
+  const salvar = async (f: Funcionario) => {
+    const payload = {
+      nome_completo: f.nome,
+      email: f.email,
+      telefone: f.telefone || null,
+      cargo: cargoAppParaDb[f.cargo] || "terapeuta",
+      registro_conselho: f.registroProfissional || null,
+      especialidade: f.especialidades.length ? f.especialidades.join(", ") : null,
+      ativo: f.status === "ativo",
+      data_admissao: f.dataAdmissao || null,
+      observacoes: `Nível de acesso: ${f.nivelAcesso}`,
+    };
+
+    const query = supabase.from("funcionarios");
+    const { data, error } = editando
+      ? await query.update(payload).eq("id", editando.id).select().single()
+      : await query.insert(payload).select().single();
+
+    if (error) {
+      toast.error(`Erro ao salvar funcionário: ${error.message}`);
+      return;
+    }
+
     setFuncionarios((prev) => {
-      const existe = prev.some((p) => p.id === f.id);
-      return existe ? prev.map((p) => (p.id === f.id ? f : p)) : [f, ...prev];
+      const convertido = mapearFuncionarioDoBanco(data);
+      const existe = prev.some((p) => p.id === convertido.id);
+      return existe
+        ? prev.map((p) => (p.id === convertido.id ? convertido : p))
+        : [convertido, ...prev];
     });
   };
 
-  const alternarStatus = (f: Funcionario) => {
-    const novo: StatusFuncionario = f.status === "ativo" ? "inativo" : "ativo";
+  const alternarStatus = async (f: Funcionario) => {
+    const novoAtivo = f.status !== "ativo";
+    const { error } = await supabase
+      .from("funcionarios")
+      .update({ ativo: novoAtivo })
+      .eq("id", f.id);
+
+    if (error) {
+      toast.error(`Erro ao alterar status: ${error.message}`);
+      return;
+    }
+
+    const novo: StatusFuncionario = novoAtivo ? "ativo" : "inativo";
     setFuncionarios((prev) =>
       prev.map((p) => (p.id === f.id ? { ...p, status: novo } : p))
     );
@@ -131,6 +239,10 @@ export default function PaginaFuncionarios() {
           Novo funcionário
         </Button>
       </div>
+
+      {carregando && (
+        <p className="text-sm text-muted-foreground">Carregando funcionários...</p>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
