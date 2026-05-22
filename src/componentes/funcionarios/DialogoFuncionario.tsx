@@ -28,7 +28,7 @@ interface Props {
   aberto: boolean;
   aoFechar: () => void;
   funcionario?: Funcionario | null;
-  aoSalvar: (f: Funcionario) => void;
+  aoSalvar: (f: Funcionario) => Promise<boolean>;
 }
 
 const vazio = (): Funcionario => ({
@@ -67,7 +67,7 @@ export function DialogoFuncionario({
     }
   }, [funcionario, aberto]);
 
-  const salvar = () => {
+  const salvar = async () => {
     if (!form.nome.trim() || !form.email.trim()) {
       toast.error("Preencha nome e e-mail");
       return;
@@ -79,11 +79,14 @@ export function DialogoFuncionario({
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    aoSalvar({
+    const sucesso = await aoSalvar({
       ...form,
       iniciais: iniciais.toUpperCase(),
       especialidades,
     });
+
+    if (!sucesso) return;
+
     toast.success(
       funcionario ? "Funcionário atualizado" : "Funcionário cadastrado"
     );

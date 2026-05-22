@@ -170,7 +170,7 @@ export default function PaginaFuncionarios() {
     setDialogoAberto(true);
   };
 
-  const salvar = async (f: Funcionario) => {
+  const salvar = async (f: Funcionario): Promise<boolean> => {
     const payload = {
       nome_completo: f.nome,
       email: f.email,
@@ -185,12 +185,23 @@ export default function PaginaFuncionarios() {
 
     const query = supabase.from("funcionarios");
     const { data, error } = editando
-      ? await query.update(payload).eq("id", editando.id).select().single()
-      : await query.insert(payload).select().single();
+      ? await query
+          .update(payload)
+          .eq("id", editando.id)
+          .select()
+          .maybeSingle()
+      : await query.insert(payload).select().maybeSingle();
 
     if (error) {
       toast.error(`Erro ao salvar funcionário: ${error.message}`);
-      return;
+      return false;
+    }
+
+    if (!data) {
+      toast.error(
+        "Sem permissão para salvar este funcionário ou registro não encontrado."
+      );
+      return false;
     }
 
     setFuncionarios((prev) => {
@@ -200,6 +211,8 @@ export default function PaginaFuncionarios() {
         ? prev.map((p) => (p.id === convertido.id ? convertido : p))
         : [convertido, ...prev];
     });
+
+    return true;
   };
 
   const alternarStatus = async (f: Funcionario) => {
