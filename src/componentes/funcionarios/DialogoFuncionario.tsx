@@ -23,12 +23,13 @@ import {
   niveisAcessoDisponiveis,
 } from "./dadosFuncionarios";
 import { toast } from "sonner";
+import { mascararTelefone } from "@/lib/mascaras";
 
 interface Props {
   aberto: boolean;
   aoFechar: () => void;
   funcionario?: Funcionario | null;
-  aoSalvar: (f: Funcionario) => void;
+  aoSalvar: (f: Funcionario) => Promise<boolean>;
 }
 
 const vazio = (): Funcionario => ({
@@ -67,7 +68,7 @@ export function DialogoFuncionario({
     }
   }, [funcionario, aberto]);
 
-  const salvar = () => {
+  const salvar = async () => {
     if (!form.nome.trim() || !form.email.trim()) {
       toast.error("Preencha nome e e-mail");
       return;
@@ -79,11 +80,14 @@ export function DialogoFuncionario({
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    aoSalvar({
+    const sucesso = await aoSalvar({
       ...form,
       iniciais: iniciais.toUpperCase(),
       especialidades,
     });
+
+    if (!sucesso) return;
+
     toast.success(
       funcionario ? "Funcionário atualizado" : "Funcionário cadastrado"
     );
@@ -126,7 +130,10 @@ export function DialogoFuncionario({
             <Label>Telefone</Label>
             <Input
               value={form.telefone}
-              onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+              onChange={(e) =>
+                // Máscara fixa para telefone no formato (99) 99999-9999.
+                setForm({ ...form, telefone: mascararTelefone(e.target.value) })
+              }
               placeholder="(11) 99999-0000"
             />
           </div>
@@ -136,7 +143,8 @@ export function DialogoFuncionario({
             <Select
               value={form.cargo}
               onValueChange={(v) =>
-                setForm({ ...form, cargo: v as Funcionario["cargo"] })
+                // O bug visual acontecia quando o valor não era espelhado no estado; aqui atualizamos `form.cargo` imediatamente.
+                setForm({ ...form, cargo: v as Funcionario["cargo"], subCargo: v as Funcionario["cargo"] })
               }
             >
               <SelectTrigger>
@@ -233,6 +241,7 @@ export function DialogoFuncionario({
               type="number"
               min={0}
               max={60}
+              className="select-text"
               value={form.cargaHorariaSemanal}
               onChange={(e) =>
                 setForm({

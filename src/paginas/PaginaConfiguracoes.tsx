@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, User, Bell, Plug, Shield, Palette, Save, Trash2, KeyRound, Mail, MessageSquare, Calendar as CalendarIcon, FileSignature, Users } from "lucide-react";
 import { AbaUsuarios } from "@/componentes/configuracoes/AbaUsuarios";
 import { toast } from "sonner";
+import { hasAdminAccess } from "@/lib/acessoCargo";
+import type { CargoFuncionario } from "@/componentes/funcionarios/tiposFuncionarios";
 
 export default function PaginaConfiguracoes() {
   // Clínica
@@ -75,6 +77,10 @@ export default function PaginaConfiguracoes() {
 
   const salvar = (secao: string) => toast.success(`${secao} salvo(a) com sucesso`);
 
+  // Regra centralizada: somente cargos administrativos enxergam abas administrativas.
+  const cargoAtual = (perfil.cargo as CargoFuncionario) || "Analista do Comportamento";
+  const podeVerAbasAdmin = hasAdminAccess(cargoAtual);
+
   return (
     <div className="space-y-6">
       <div>
@@ -86,13 +92,13 @@ export default function PaginaConfiguracoes() {
 
       <Tabs defaultValue="clinica" className="w-full">
         <div className="-mx-3 sm:-mx-4 lg:mx-0 overflow-x-auto">
-        <TabsList className="inline-flex w-max lg:w-full lg:grid lg:grid-cols-7 px-3 sm:px-4 lg:px-0">
+        <TabsList className={`inline-flex w-max lg:w-full lg:grid ${podeVerAbasAdmin ? "lg:grid-cols-7" : "lg:grid-cols-5"} px-3 sm:px-4 lg:px-0`}>
           <TabsTrigger value="clinica"><Building2 className="h-4 w-4 mr-1.5" />Clínica</TabsTrigger>
           <TabsTrigger value="perfil"><User className="h-4 w-4 mr-1.5" />Perfil</TabsTrigger>
-          <TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-1.5" />Usuários</TabsTrigger>
+          {podeVerAbasAdmin && (<TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-1.5" />Usuários</TabsTrigger>)}
           <TabsTrigger value="notificacoes"><Bell className="h-4 w-4 mr-1.5" />Avisos</TabsTrigger>
-          <TabsTrigger value="integracoes"><Plug className="h-4 w-4 mr-1.5" />Integrações</TabsTrigger>
-          <TabsTrigger value="seguranca"><Shield className="h-4 w-4 mr-1.5" />Segurança</TabsTrigger>
+          {podeVerAbasAdmin && (<TabsTrigger value="integracoes"><Plug className="h-4 w-4 mr-1.5" />Integrações</TabsTrigger>)}
+          {podeVerAbasAdmin && (<TabsTrigger value="seguranca"><Shield className="h-4 w-4 mr-1.5" />Segurança</TabsTrigger>)}
           <TabsTrigger value="aparencia"><Palette className="h-4 w-4 mr-1.5" />Aparência</TabsTrigger>
         </TabsList>
         </div>
@@ -206,9 +212,11 @@ export default function PaginaConfiguracoes() {
         </TabsContent>
 
         {/* USUÁRIOS */}
+        {podeVerAbasAdmin && (
         <TabsContent value="usuarios" className="pt-4">
           <AbaUsuarios />
         </TabsContent>
+        )}
 
         {/* NOTIFICAÇÕES */}
         <TabsContent value="notificacoes" className="pt-4">
@@ -244,6 +252,7 @@ export default function PaginaConfiguracoes() {
         </TabsContent>
 
         {/* INTEGRAÇÕES */}
+        {podeVerAbasAdmin && (
         <TabsContent value="integracoes" className="pt-4">
           <div className="grid md:grid-cols-2 gap-4">
             {[
@@ -276,8 +285,10 @@ export default function PaginaConfiguracoes() {
             ))}
           </div>
         </TabsContent>
+        )}
 
         {/* SEGURANÇA */}
+        {podeVerAbasAdmin && (
         <TabsContent value="seguranca" className="pt-4">
           <Card className="p-6 space-y-5">
             <div>
@@ -321,6 +332,7 @@ export default function PaginaConfiguracoes() {
             </div>
           </Card>
         </TabsContent>
+        )}
 
         {/* APARÊNCIA */}
         <TabsContent value="aparencia" className="pt-4">
