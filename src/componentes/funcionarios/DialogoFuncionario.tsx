@@ -143,7 +143,8 @@ export function DialogoFuncionario({
             <Select
               value={form.cargo}
               onValueChange={(v) =>
-                setForm({ ...form, cargo: v as Funcionario["cargo"] })
+                // O bug visual acontecia quando o valor não era espelhado no estado; aqui atualizamos `form.cargo` imediatamente.
+                setForm({ ...form, cargo: v as Funcionario["cargo"], subCargo: v as Funcionario["cargo"] })
               }
             >
               <SelectTrigger>

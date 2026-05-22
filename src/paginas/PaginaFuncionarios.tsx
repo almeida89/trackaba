@@ -41,35 +41,28 @@ const rotuloStatus: Record<StatusFuncionario, string> = {
 
 
 
-type CargoDb = Database["public"]["Enums"]["cargo_funcionario"];
+type CargoDb = "terapeuta" | "administracao";
 
 type FuncionarioRow = Database["public"]["Tables"]["funcionarios"]["Row"];
 
-const cargoAppParaDb: Record<Funcionario["cargo"], CargoDb> = {
-  // Cargos clínicos mapeados para enum de terapeuta no banco.
+const cargoMacroPorSubcargo: Record<Funcionario["cargo"], CargoDb> = {
+  // Regra de negócio: subcargos clínicos pertencem ao macro cargo "terapeuta".
   "Analista do Comportamento": "terapeuta",
   "Terapeuta ABA": "terapeuta",
-  "Psicólogo(a)": "psicologo",
+  "Psicólogo(a)": "terapeuta",
   "Fonoaudiologo(a)": "terapeuta",
   "Terapeuta Ocupacional": "terapeuta",
-  "Coordernador(a) Clínico(a)": "coordenador",
-  "Supervisor(a)": "supervisor",
-  "Recepção": "recepcionista",
-  Administrativo: "admin",
+  // Regra de negócio: subcargos de gestão/apoio pertencem ao macro cargo "administracao".
+  "Coordernador(a) Clínico(a)": "administracao",
+  "Supervisor(a)": "administracao",
+  "Recepção": "administracao",
+  Administrativo: "administracao",
 };
 
-const cargoDbParaApp: Record<CargoDb, Funcionario["cargo"]> = {
-  // No retorno do banco, o enum "psicologo" representa o grupo clínico quando necessário.
-  psicologo: "Psicólogo(a)",
-  coordenador: "Coordernador(a) Clínico(a)",
-  recepcionista: "Recepção",
-  admin: "Administrativo",
-  // "terapeuta" representa Analista/Fono/T.O./Terapeuta ABA; aqui usamos um rótulo padrão.
+const cargoDbParaAppPadrao: Record<CargoDb, Funcionario["cargo"]> = {
   terapeuta: "Analista do Comportamento",
-  supervisor: "Supervisor(a)",
-  outro: "Analista do Comportamento",
+  administracao: "Administrativo",
 };
-
 const corStatus: Record<StatusFuncionario, string> = {
   ativo: "bg-status-success/15 text-status-success border-status-success/30",
   ferias: "bg-status-info/15 text-status-info border-status-info/30",
@@ -96,8 +89,9 @@ const mapearFuncionarioDoBanco = (f: FuncionarioRow): Funcionario => ({
   nome: f.nome_completo,
   email: f.email,
   telefone: f.telefone || "",
-  // Fallback mantém um cargo clínico válido caso venha enum inesperado.
-  cargo: cargoDbParaApp[f.cargo] ?? "Analista do Comportamento",
+  // O select usa sub_cargo; se vier vazio, cai no padrão do cargo macro.
+  cargo: (f.sub_cargo as Funcionario["cargo"] | null) ?? cargoDbParaAppPadrao[(f.cargo as CargoDb) ?? "terapeuta"],
+  subCargo: (f.sub_cargo as Funcionario["cargo"] | null) ?? undefined,
   registroProfissional: f.registro_conselho || "",
   especialidades: f.especialidade ? f.especialidade.split(",").map((s) => s.trim()).filter(Boolean) : [],
   status: paraStatus(f.ativo),
@@ -182,7 +176,9 @@ export default function PaginaFuncionarios() {
       nome_completo: f.nome,
       email: f.email,
       telefone: f.telefone || null,
-      cargo: cargoAppParaDb[f.cargo] || "terapeuta",
+      // Salva cargo macro para permissões e sub_cargo para especialidade exibida no select.
+      cargo: cargoMacroPorSubcargo[f.cargo] || "terapeuta",
+      sub_cargo: f.cargo,
       registro_conselho: f.registroProfissional || null,
       especialidade: f.especialidades.length ? f.especialidades.join(", ") : null,
       ativo: f.status === "ativo",

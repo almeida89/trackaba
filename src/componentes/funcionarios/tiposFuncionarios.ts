@@ -19,6 +19,8 @@ export interface Funcionario {
   email: string;
   telefone: string;
   cargo: CargoFuncionario;
+  // Subcargo explícito para refletir seleção específica do formulário.
+  subCargo?: CargoFuncionario;
   registroProfissional?: string;
   especialidades: string[];
   status: StatusFuncionario;
