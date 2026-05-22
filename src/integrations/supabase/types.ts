@@ -481,9 +481,11 @@ export type Database = {
           especialidade: string | null
           id: string
           nome_completo: string
+          nivel_acesso: string | null
           observacoes: string | null
           registro_conselho: string | null
           telefone: string | null
+          carga_horaria_semanal: number | null
           user_id: string | null
         }
         Insert: {
@@ -496,9 +498,11 @@ export type Database = {
           especialidade?: string | null
           id?: string
           nome_completo: string
+          nivel_acesso?: string | null
           observacoes?: string | null
           registro_conselho?: string | null
           telefone?: string | null
+          carga_horaria_semanal?: number | null
           user_id?: string | null
         }
         Update: {
@@ -511,9 +515,11 @@ export type Database = {
           especialidade?: string | null
           id?: string
           nome_completo?: string
+          nivel_acesso?: string | null
           observacoes?: string | null
           registro_conselho?: string | null
           telefone?: string | null
+          carga_horaria_semanal?: number | null
           user_id?: string | null
         }
         Relationships: []

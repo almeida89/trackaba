@@ -23,6 +23,7 @@ import {
   niveisAcessoDisponiveis,
 } from "./dadosFuncionarios";
 import { toast } from "sonner";
+import { mascararTelefone } from "@/lib/mascaras";
 
 interface Props {
   aberto: boolean;
@@ -129,7 +130,10 @@ export function DialogoFuncionario({
             <Label>Telefone</Label>
             <Input
               value={form.telefone}
-              onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+              onChange={(e) =>
+                // Máscara fixa para telefone no formato (99) 99999-9999.
+                setForm({ ...form, telefone: mascararTelefone(e.target.value) })
+              }
               placeholder="(11) 99999-0000"
             />
           </div>
@@ -236,6 +240,7 @@ export function DialogoFuncionario({
               type="number"
               min={0}
               max={60}
+              className="select-text"
               value={form.cargaHorariaSemanal}
               onChange={(e) =>
                 setForm({

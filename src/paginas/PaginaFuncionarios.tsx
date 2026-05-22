@@ -46,25 +46,28 @@ type CargoDb = Database["public"]["Enums"]["cargo_funcionario"];
 type FuncionarioRow = Database["public"]["Tables"]["funcionarios"]["Row"];
 
 const cargoAppParaDb: Record<Funcionario["cargo"], CargoDb> = {
-  "Analista de Comportamento": "supervisor",
+  // Cargos clínicos mapeados para enum de terapeuta no banco.
+  "Analista do Comportamento": "terapeuta",
   "Terapeuta ABA": "terapeuta",
   "Psicólogo(a)": "psicologo",
-  "Fonoaudiólogo(a)": "outro",
-  "Terapeuta Ocupacional": "outro",
-  "Coordenador(a) Clínico(a)": "coordenador",
+  "Fonoaudiologo(a)": "terapeuta",
+  "Terapeuta Ocupacional": "terapeuta",
+  "Coordernador(a) Clínico(a)": "coordenador",
   "Supervisor(a)": "supervisor",
   "Recepção": "recepcionista",
   Administrativo: "admin",
 };
 
 const cargoDbParaApp: Record<CargoDb, Funcionario["cargo"]> = {
+  // No retorno do banco, o enum "psicologo" representa o grupo clínico quando necessário.
   psicologo: "Psicólogo(a)",
-  coordenador: "Coordenador(a) Clínico(a)",
+  coordenador: "Coordernador(a) Clínico(a)",
   recepcionista: "Recepção",
   admin: "Administrativo",
-  terapeuta: "Terapeuta ABA",
+  // "terapeuta" representa Analista/Fono/T.O./Terapeuta ABA; aqui usamos um rótulo padrão.
+  terapeuta: "Analista do Comportamento",
   supervisor: "Supervisor(a)",
-  outro: "Analista de Comportamento",
+  outro: "Analista do Comportamento",
 };
 
 const corStatus: Record<StatusFuncionario, string> = {
@@ -93,13 +96,16 @@ const mapearFuncionarioDoBanco = (f: FuncionarioRow): Funcionario => ({
   nome: f.nome_completo,
   email: f.email,
   telefone: f.telefone || "",
-  cargo: cargoDbParaApp[f.cargo] ?? "Terapeuta ABA",
+  // Fallback mantém um cargo clínico válido caso venha enum inesperado.
+  cargo: cargoDbParaApp[f.cargo] ?? "Analista do Comportamento",
   registroProfissional: f.registro_conselho || "",
   especialidades: f.especialidade ? f.especialidade.split(",").map((s) => s.trim()).filter(Boolean) : [],
   status: paraStatus(f.ativo),
-  nivelAcesso: "operacional",
+  // Lê nível de acesso diretamente da coluna nova do banco.
+  nivelAcesso: (f.nivel_acesso as Funcionario["nivelAcesso"] | null) ?? "operacional",
   dataAdmissao: f.data_admissao || new Date().toISOString().slice(0, 10),
-  cargaHorariaSemanal: 0,
+  // Lê carga horária diretamente da coluna nova do banco.
+  cargaHorariaSemanal: f.carga_horaria_semanal ?? 0,
   criancasAtendidas: 0,
   sessoesNoMes: 0,
   iniciais: iniciaisDoNome(f.nome_completo),
@@ -147,6 +153,7 @@ export default function PaginaFuncionarios() {
       .order("criado_em", { ascending: false });
 
     if (error) {
+      console.error("[funcionarios] erro ao carregar", error);
       toast.error("Não foi possível carregar funcionários");
       setCarregando(false);
       return;
@@ -180,7 +187,9 @@ export default function PaginaFuncionarios() {
       especialidade: f.especialidades.length ? f.especialidades.join(", ") : null,
       ativo: f.status === "ativo",
       data_admissao: f.dataAdmissao || null,
-      observacoes: `Nível de acesso: ${f.nivelAcesso}`,
+      // Agora persiste no campo correto da tabela, sem usar observações.
+      nivel_acesso: f.nivelAcesso,
+      carga_horaria_semanal: f.cargaHorariaSemanal,
     };
 
     const query = supabase.from("funcionarios");
@@ -192,6 +201,7 @@ export default function PaginaFuncionarios() {
       : await query.insert(payload).select("*");
 
     if (error) {
+      console.error("[funcionarios] erro ao salvar", { error, payload, editandoId: editando?.id });
       toast.error(`Erro ao salvar funcionário: ${error.message}`);
       return false;
     }
@@ -224,6 +234,7 @@ export default function PaginaFuncionarios() {
       .eq("id", f.id);
 
     if (error) {
+      console.error("[funcionarios] erro ao alterar status", { error, id: f.id });
       toast.error(`Erro ao alterar status: ${error.message}`);
       return;
     }

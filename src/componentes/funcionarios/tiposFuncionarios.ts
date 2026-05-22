@@ -1,10 +1,10 @@
 export type CargoFuncionario =
-  | "Analista de Comportamento"
+  | "Analista do Comportamento"
   | "Terapeuta ABA"
   | "Psicólogo(a)"
-  | "Fonoaudiólogo(a)"
+  | "Fonoaudiologo(a)"
   | "Terapeuta Ocupacional"
-  | "Coordenador(a) Clínico(a)"
+  | "Coordernador(a) Clínico(a)"
   | "Supervisor(a)"
   | "Recepção"
   | "Administrativo";
