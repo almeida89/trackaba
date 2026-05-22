@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   UserCheck,
@@ -23,14 +23,13 @@ import {
 } from "@/components/ui/select";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
 import { DialogoFuncionario } from "@/componentes/funcionarios/DialogoFuncionario";
-import {
-  cargosDisponiveis,
-  funcionariosMock,
-} from "@/componentes/funcionarios/dadosFuncionarios";
+import { cargosDisponiveis } from "@/componentes/funcionarios/dadosFuncionarios";
 import {
   Funcionario,
   StatusFuncionario,
 } from "@/componentes/funcionarios/tiposFuncionarios";
+import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
 const rotuloStatus: Record<StatusFuncionario, string> = {
@@ -38,6 +37,37 @@ const rotuloStatus: Record<StatusFuncionario, string> = {
   ferias: "Em férias",
   afastado: "Afastado",
   inativo: "Inativo",
+};
+
+
+
+type CargoDb = Database["public"]["Enums"]["cargo_funcionario"];
+
+type FuncionarioRow = Database["public"]["Tables"]["funcionarios"]["Row"];
+
+const cargoAppParaDb: Record<Funcionario["cargo"], CargoDb> = {
+  // Cargos clínicos mapeados para enum de terapeuta no banco.
+  "Analista do Comportamento": "terapeuta",
+  "Terapeuta ABA": "terapeuta",
+  "Psicólogo(a)": "psicologo",
+  "Fonoaudiologo(a)": "terapeuta",
+  "Terapeuta Ocupacional": "terapeuta",
+  "Coordernador(a) Clínico(a)": "coordenador",
+  "Supervisor(a)": "supervisor",
+  "Recepção": "recepcionista",
+  Administrativo: "admin",
+};
+
+const cargoDbParaApp: Record<CargoDb, Funcionario["cargo"]> = {
+  // No retorno do banco, o enum "psicologo" representa o grupo clínico quando necessário.
+  psicologo: "Psicólogo(a)",
+  coordenador: "Coordernador(a) Clínico(a)",
+  recepcionista: "Recepção",
+  admin: "Administrativo",
+  // "terapeuta" representa Analista/Fono/T.O./Terapeuta ABA; aqui usamos um rótulo padrão.
+  terapeuta: "Analista do Comportamento",
+  supervisor: "Supervisor(a)",
+  outro: "Analista do Comportamento",
 };
 
 const corStatus: Record<StatusFuncionario, string> = {
@@ -54,9 +84,36 @@ const corNivel: Record<string, string> = {
   visualizador: "bg-muted/50 text-muted-foreground border-border",
 };
 
+const paraStatus = (ativo: boolean): StatusFuncionario => (ativo ? "ativo" : "inativo");
+
+const iniciaisDoNome = (nome: string) => {
+  const partes = nome.trim().split(" ").filter(Boolean);
+  return ((partes[0]?.[0] || "") + (partes[partes.length - 1]?.[0] || "")).toUpperCase();
+};
+
+const mapearFuncionarioDoBanco = (f: FuncionarioRow): Funcionario => ({
+  id: f.id,
+  nome: f.nome_completo,
+  email: f.email,
+  telefone: f.telefone || "",
+  // Fallback mantém um cargo clínico válido caso venha enum inesperado.
+  cargo: cargoDbParaApp[f.cargo] ?? "Analista do Comportamento",
+  registroProfissional: f.registro_conselho || "",
+  especialidades: f.especialidade ? f.especialidade.split(",").map((s) => s.trim()).filter(Boolean) : [],
+  status: paraStatus(f.ativo),
+  // Lê nível de acesso diretamente da coluna nova do banco.
+  nivelAcesso: (f.nivel_acesso as Funcionario["nivelAcesso"] | null) ?? "operacional",
+  dataAdmissao: f.data_admissao || new Date().toISOString().slice(0, 10),
+  // Lê carga horária diretamente da coluna nova do banco.
+  cargaHorariaSemanal: f.carga_horaria_semanal ?? 0,
+  criancasAtendidas: 0,
+  sessoesNoMes: 0,
+  iniciais: iniciaisDoNome(f.nome_completo),
+});
+
 export default function PaginaFuncionarios() {
-  const [funcionarios, setFuncionarios] =
-    useState<Funcionario[]>(funcionariosMock);
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroCargo, setFiltroCargo] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
@@ -88,6 +145,28 @@ export default function PaginaFuncionarios() {
     return { total: funcionarios.length, ativos, ferias, afastados };
   }, [funcionarios]);
 
+  const carregarFuncionarios = async () => {
+    setCarregando(true);
+    const { data, error } = await supabase
+      .from("funcionarios")
+      .select("*")
+      .order("criado_em", { ascending: false });
+
+    if (error) {
+      console.error("[funcionarios] erro ao carregar", error);
+      toast.error("Não foi possível carregar funcionários");
+      setCarregando(false);
+      return;
+    }
+
+    setFuncionarios((data || []).map(mapearFuncionarioDoBanco));
+    setCarregando(false);
+  };
+
+  useEffect(() => {
+    void carregarFuncionarios();
+  }, []);
+
   const abrirNovo = () => {
     setEditando(null);
     setDialogoAberto(true);
@@ -98,15 +177,69 @@ export default function PaginaFuncionarios() {
     setDialogoAberto(true);
   };
 
-  const salvar = (f: Funcionario) => {
+  const salvar = async (f: Funcionario): Promise<boolean> => {
+    const payload = {
+      nome_completo: f.nome,
+      email: f.email,
+      telefone: f.telefone || null,
+      cargo: cargoAppParaDb[f.cargo] || "terapeuta",
+      registro_conselho: f.registroProfissional || null,
+      especialidade: f.especialidades.length ? f.especialidades.join(", ") : null,
+      ativo: f.status === "ativo",
+      data_admissao: f.dataAdmissao || null,
+      // Agora persiste no campo correto da tabela, sem usar observações.
+      nivel_acesso: f.nivelAcesso,
+      carga_horaria_semanal: f.cargaHorariaSemanal,
+    };
+
+    const query = supabase.from("funcionarios");
+    const idParaAtualizar = editando?.id || f.id;
+    const isEdicao = Boolean(editando || funcionarios.some((item) => item.id === f.id));
+
+    const { data, error } = isEdicao
+      ? await query.update(payload).eq("id", idParaAtualizar).select("*")
+      : await query.insert(payload).select("*");
+
+    if (error) {
+      console.error("[funcionarios] erro ao salvar", { error, payload, editandoId: editando?.id });
+      toast.error(`Erro ao salvar funcionário: ${error.message}`);
+      return false;
+    }
+
+    const linhaSalva = data?.[0];
+
+    if (!linhaSalva) {
+      toast.error(
+        "Sem permissão para salvar este funcionário ou registro não encontrado."
+      );
+      return false;
+    }
+
     setFuncionarios((prev) => {
-      const existe = prev.some((p) => p.id === f.id);
-      return existe ? prev.map((p) => (p.id === f.id ? f : p)) : [f, ...prev];
+      const convertido = mapearFuncionarioDoBanco(linhaSalva);
+      const existe = prev.some((p) => p.id === convertido.id);
+      return existe
+        ? prev.map((p) => (p.id === convertido.id ? convertido : p))
+        : [convertido, ...prev];
     });
+
+    return true;
   };
 
-  const alternarStatus = (f: Funcionario) => {
-    const novo: StatusFuncionario = f.status === "ativo" ? "inativo" : "ativo";
+  const alternarStatus = async (f: Funcionario) => {
+    const novoAtivo = f.status !== "ativo";
+    const { error } = await supabase
+      .from("funcionarios")
+      .update({ ativo: novoAtivo })
+      .eq("id", f.id);
+
+    if (error) {
+      console.error("[funcionarios] erro ao alterar status", { error, id: f.id });
+      toast.error(`Erro ao alterar status: ${error.message}`);
+      return;
+    }
+
+    const novo: StatusFuncionario = novoAtivo ? "ativo" : "inativo";
     setFuncionarios((prev) =>
       prev.map((p) => (p.id === f.id ? { ...p, status: novo } : p))
     );
@@ -131,6 +264,10 @@ export default function PaginaFuncionarios() {
           Novo funcionário
         </Button>
       </div>
+
+      {carregando && (
+        <p className="text-sm text-muted-foreground">Carregando funcionários...</p>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
