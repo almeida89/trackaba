@@ -170,7 +170,7 @@ export default function PaginaFuncionarios() {
     setDialogoAberto(true);
   };
 
-  const salvar = async (f: Funcionario) => {
+  const salvar = async (f: Funcionario): Promise<boolean> => {
     const payload = {
       nome_completo: f.nome,
       email: f.email,
@@ -184,22 +184,36 @@ export default function PaginaFuncionarios() {
     };
 
     const query = supabase.from("funcionarios");
-    const { data, error } = editando
-      ? await query.update(payload).eq("id", editando.id).select().single()
-      : await query.insert(payload).select().single();
+    const idParaAtualizar = editando?.id || f.id;
+    const isEdicao = Boolean(editando || funcionarios.some((item) => item.id === f.id));
+
+    const { data, error } = isEdicao
+      ? await query.update(payload).eq("id", idParaAtualizar).select("*")
+      : await query.insert(payload).select("*");
 
     if (error) {
       toast.error(`Erro ao salvar funcionário: ${error.message}`);
-      return;
+      return false;
+    }
+
+    const linhaSalva = data?.[0];
+
+    if (!linhaSalva) {
+      toast.error(
+        "Sem permissão para salvar este funcionário ou registro não encontrado."
+      );
+      return false;
     }
 
     setFuncionarios((prev) => {
-      const convertido = mapearFuncionarioDoBanco(data);
+      const convertido = mapearFuncionarioDoBanco(linhaSalva);
       const existe = prev.some((p) => p.id === convertido.id);
       return existe
         ? prev.map((p) => (p.id === convertido.id ? convertido : p))
         : [convertido, ...prev];
     });
+
+    return true;
   };
 
   const alternarStatus = async (f: Funcionario) => {
