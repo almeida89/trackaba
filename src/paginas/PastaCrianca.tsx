@@ -74,6 +74,10 @@ const abas = [
 
 function ConteudoCadastro({ crianca }: { crianca: CriancaDetalhe }) {
   const idade = calcularIdade(crianca.data_nascimento);
+  const { papel } = useUserRole();
+  const podeGerenciar = papel === "admin" || papel === "coordenador" || papel === "recepcionista";
+  const { responsaveis, adicionar, remover } = useResponsaveisCrianca(crianca.id);
+
   const dadosPessoais: [string, string][] = [
     ["Nome Completo", crianca.nome],
     ["Data de Nascimento", formatarDataBR(crianca.data_nascimento)],
@@ -90,24 +94,48 @@ function ConteudoCadastro({ crianca }: { crianca: CriancaDetalhe }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <h3 className="font-heading font-semibold text-foreground">Dados Pessoais</h3>
-        {dadosPessoais.map(([rotulo, valor]) => (
-          <div key={rotulo}>
-            <p className="text-xs text-muted-foreground">{rotulo}</p>
-            <p className="text-sm font-medium text-foreground">{valor}</p>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="font-heading font-semibold text-foreground">Dados Pessoais</h3>
+          {dadosPessoais.map(([rotulo, valor]) => (
+            <div key={rotulo}>
+              <p className="text-xs text-muted-foreground">{rotulo}</p>
+              <p className="text-sm font-medium text-foreground">{valor}</p>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-4">
+          <h3 className="font-heading font-semibold text-foreground">Informações Clínicas</h3>
+          {dadosClinicos.map(([rotulo, valor]) => (
+            <div key={rotulo}>
+              <p className="text-xs text-muted-foreground">{rotulo}</p>
+              <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{valor}</p>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="space-y-4">
-        <h3 className="font-heading font-semibold text-foreground">Informações Clínicas</h3>
-        {dadosClinicos.map(([rotulo, valor]) => (
-          <div key={rotulo}>
-            <p className="text-xs text-muted-foreground">{rotulo}</p>
-            <p className="text-sm font-medium text-foreground whitespace-pre-wrap">{valor}</p>
-          </div>
-        ))}
+
+      <div className="space-y-3 rounded-xl border border-border bg-card p-5">
+        <div>
+          <h3 className="font-heading font-semibold text-foreground">Profissionais responsáveis</h3>
+          <p className="text-xs text-muted-foreground">
+            Quem pode acessar e atender esta criança no sistema.
+          </p>
+        </div>
+        <SeletorResponsaveis
+          selecionados={responsaveis.map((r) => ({
+            funcionarioId: r.funcionarioId,
+            nome: r.nome,
+            cargo: r.cargo,
+          }))}
+          aoAdicionar={(f) => adicionar(f.id)}
+          aoRemover={(funcionarioId) => {
+            const v = responsaveis.find((r) => r.funcionarioId === funcionarioId);
+            if (v) return remover(v.vinculoId);
+          }}
+          desabilitado={!podeGerenciar}
+        />
       </div>
     </div>
   );
