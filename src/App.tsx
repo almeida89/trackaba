@@ -38,17 +38,17 @@ const RotasInternas = () => (
       <Route path="/" element={<PainelPrincipal />} />
       <Route path="/criancas" element={<ListaCriancas />} />
       <Route path="/criancas/:id" element={<PastaCrianca />} />
-      <Route path="/funcionarios" element={<PaginaFuncionarios />} />
+      <Route path="/funcionarios" element={<RotaAdmin><PaginaFuncionarios /></RotaAdmin>} />
       <Route path="/sessoes" element={<PaginaSessoes />} />
       <Route path="/programas" element={<PaginaProgramas />} />
       <Route path="/avaliacoes" element={<PaginaAvaliacoes />} />
       <Route path="/agenda" element={<PaginaAgenda />} />
       <Route path="/escola" element={<PaginaEscola />} />
       <Route path="/familia" element={<PaginaFamilia />} />
-      <Route path="/automacoes" element={<PaginaModulo />} />
+      <Route path="/automacoes" element={<RotaAdmin><PaginaModulo /></RotaAdmin>} />
       <Route path="/usuarios" element={<RotaAdmin><PaginaUsuarios /></RotaAdmin>} />
-      <Route path="/configuracoes" element={<PaginaConfiguracoes />} />
-      <Route path="/logs" element={<PaginaLogs />} />
+      <Route path="/configuracoes" element={<RotaAdmin><PaginaConfiguracoes /></RotaAdmin>} />
+      <Route path="/logs" element={<RotaAdmin><PaginaLogs /></RotaAdmin>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   </LayoutPrincipal>

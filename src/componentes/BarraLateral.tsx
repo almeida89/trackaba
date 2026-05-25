@@ -67,11 +67,11 @@ const secoesMenu: SecaoMenu[] = [
   {
     titulo: "Administração",
     itens: [
-      { titulo: "Funcionários", url: "/funcionarios", icone: Users },
+      { titulo: "Funcionários", url: "/funcionarios", icone: Users, somenteAdmin: true },
       { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
-      { titulo: "Automações", url: "/automacoes", icone: Zap },
-      { titulo: "Configurações", url: "/configuracoes", icone: Settings },
-      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield },
+      { titulo: "Automações", url: "/automacoes", icone: Zap, somenteAdmin: true },
+      { titulo: "Configurações", url: "/configuracoes", icone: Settings, somenteAdmin: true },
+      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield, somenteAdmin: true },
     ],
   },
 ];

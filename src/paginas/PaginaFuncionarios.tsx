@@ -153,7 +153,59 @@ export default function PaginaFuncionarios() {
       return;
     }
 
-    setFuncionarios((data || []).map(mapearFuncionarioDoBanco));
+    const base = (data || []).map(mapearFuncionarioDoBanco);
+    const ids = base.map((f) => f.id);
+    const userIds = (data || []).map((d) => d.user_id).filter((u): u is string => !!u);
+
+    // Conta crianças vinculadas por funcionário
+    const contagemCriancas: Record<string, number> = {};
+    if (ids.length > 0) {
+      const { data: vinc } = await supabase
+        .from("crianca_responsaveis")
+        .select("funcionario_id,crianca_id")
+        .in("funcionario_id", ids);
+      const setPorFunc: Record<string, Set<string>> = {};
+      (vinc ?? []).forEach((v) => {
+        const fId = v.funcionario_id as string;
+        const cId = v.crianca_id as string;
+        (setPorFunc[fId] ??= new Set()).add(cId);
+      });
+      Object.entries(setPorFunc).forEach(([fId, s]) => (contagemCriancas[fId] = s.size));
+    }
+
+    // Conta sessões do mês corrente por terapeuta_id (= funcionarios.user_id)
+    const contagemSessoes: Record<string, number> = {};
+    if (userIds.length > 0) {
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+      const fimMes = new Date(inicioMes);
+      fimMes.setMonth(fimMes.getMonth() + 1);
+      const { data: sess } = await supabase
+        .from("sessoes")
+        .select("terapeuta_id,data_sessao")
+        .in("terapeuta_id", userIds)
+        .gte("data_sessao", inicioMes.toISOString())
+        .lt("data_sessao", fimMes.toISOString());
+      (sess ?? []).forEach((s) => {
+        const t = s.terapeuta_id as string;
+        contagemSessoes[t] = (contagemSessoes[t] ?? 0) + 1;
+      });
+    }
+
+    const userIdPorFunc: Record<string, string | null> = {};
+    (data || []).forEach((d) => (userIdPorFunc[d.id] = d.user_id ?? null));
+
+    setFuncionarios(
+      base.map((f) => {
+        const uid = userIdPorFunc[f.id];
+        return {
+          ...f,
+          criancasAtendidas: contagemCriancas[f.id] ?? 0,
+          sessoesNoMes: uid ? contagemSessoes[uid] ?? 0 : 0,
+        };
+      }),
+    );
     setCarregando(false);
   };
 
