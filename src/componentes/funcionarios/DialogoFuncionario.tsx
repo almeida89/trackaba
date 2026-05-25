@@ -271,6 +271,45 @@ export function DialogoFuncionario({
           </div>
         </div>
 
+        {!editando && (
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Acesso ao sistema</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cria login imediato — o profissional já pode entrar com este e-mail.
+                  </p>
+                </div>
+              </div>
+              <Switch checked={criarAcesso} onCheckedChange={setCriarAcesso} />
+            </div>
+            {criarAcesso && (
+              <div className="space-y-2">
+                <Label>Senha inicial *</Label>
+                <Input
+                  type="text"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="Mín. 10 caracteres, com maiúscula, número e símbolo"
+                  autoComplete="new-password"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Anote e compartilhe com o profissional. Ele poderá alterar após o primeiro login.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {editando && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+            Para redefinir senha ou revogar acesso, use as ações na listagem (em breve).
+          </div>
+        )}
+
+
         <DialogFooter>
           <Button variant="outline" onClick={aoFechar}>
             Cancelar
