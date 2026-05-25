@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { RotaProtegida } from "@/componentes/RotaProtegida";
 import { RotaEquipe } from "@/componentes/RotaEquipe";
 import { RotaAdmin } from "@/componentes/RotaAdmin";
+import { RotaPapeis } from "@/componentes/RotaPapeis";
 import PaginaAuth from "@/paginas/PaginaAuth";
 import PaginaResetSenha from "@/paginas/PaginaResetSenha";
 import PaginaUsuarios from "@/paginas/PaginaUsuarios";
