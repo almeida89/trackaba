@@ -15,6 +15,8 @@ import { useCriancas } from "@/hooks/useCriancas";
 import { criancaSchema, type CriancaForm } from "@/schemas/crianca";
 import { mascararTelefone } from "@/lib/mascaras";
 import { toast } from "sonner";
+import { SeletorResponsaveis } from "./SeletorResponsaveis";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   aberto: boolean;
@@ -35,6 +37,9 @@ export function DialogoNovaCrianca({ aberto, aoFechar }: Props) {
   const { criar, salvando } = useCriancas();
   const [form, setForm] = useState<CriancaForm>(inicial);
   const [erros, setErros] = useState<Partial<Record<keyof CriancaForm, string>>>({});
+  const [responsaveis, setResponsaveis] = useState<
+    { funcionarioId: string; nome: string; cargo: string | null }[]
+  >([]);
 
   const set = <K extends keyof CriancaForm>(k: K, v: CriancaForm[K]) =>
     setForm((s) => ({ ...s, [k]: v }));
@@ -53,8 +58,20 @@ export function DialogoNovaCrianca({ aberto, aoFechar }: Props) {
     }
     setErros({});
     try {
-      await criar(parsed.data);
+      const criada = await criar(parsed.data);
+      // Vincula profissionais selecionados (best-effort)
+      if (criada?.id && responsaveis.length > 0) {
+        const { data: userData } = await supabase.auth.getUser();
+        const linhas = responsaveis.map((r) => ({
+          crianca_id: criada.id,
+          funcionario_id: r.funcionarioId,
+          criado_por: userData.user?.id,
+        }));
+        const { error } = await supabase.from("crianca_responsaveis").insert(linhas);
+        if (error) toast.error("Criança cadastrada, mas falha ao vincular profissionais.");
+      }
       setForm(inicial);
+      setResponsaveis([]);
       aoFechar();
     } catch {
       // erro tratado no hook
@@ -145,6 +162,19 @@ export function DialogoNovaCrianca({ aberto, aoFechar }: Props) {
                 <p className="text-xs text-destructive mt-1">{erros.email_contato}</p>
               )}
             </div>
+          </div>
+
+          <div>
+            <Label>Profissionais responsáveis</Label>
+            <SeletorResponsaveis
+              selecionados={responsaveis}
+              aoAdicionar={(f) =>
+                setResponsaveis((s) => [...s, { funcionarioId: f.id, nome: f.nome, cargo: f.cargo }])
+              }
+              aoRemover={(id) =>
+                setResponsaveis((s) => s.filter((r) => r.funcionarioId !== id))
+              }
+            />
           </div>
 
           <div>

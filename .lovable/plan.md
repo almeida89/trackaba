@@ -1,106 +1,172 @@
-## Objetivo
+# Refactor — Criação interna de funcionários + Atribuição de crianças
 
-Deixar o TrackABA pronto para uma **reunião de demonstração comercial** com donos de clínica em 1-2 dias de trabalho. Não é versão vendável ainda — é uma demo polida com dados realistas e narrativa clara, suficiente para validar interesse e cobrar pré-venda.
-
-## Os 4 módulos que precisam estar impecáveis
-
-1. **Pasta da Criança + Sessões** — coração clínico do produto
-2. **Programas + Gráficos de evolução** — diferencial técnico ABA
-3. **Visão da Escola** (convite + portal externo) — diferencial competitivo
-4. **Visão da Família** (portal dos pais) — argumento de retenção
+Fluxo final: **Admin/Coord/Recepção cria funcionário → senha definida ali mesmo, login imediato → atribui crianças no cadastro da criança → profissional entra e vê só o que é dele.**
 
 ---
 
-## Entregas
+## 1. Mudanças no banco (1 migração)
 
-### 1. Landing/Login com pitch de venda
-- Substituir tela `/auth` atual por uma versão com **hero institucional** à esquerda (logo TrackABA, headline "O CRM clínico feito para terapia ABA", 3 bullets de benefícios) e formulário à direita.
-- Botão grande **"Entrar como demonstração"** que faz login automático com `admin@clinica.com` / `Admin@2025` — para o cliente não ter que digitar nada na reunião.
-- Rodapé com selo "Compatível com LGPD" e contato.
+### 1.1 Nova tabela `crianca_responsaveis`
 
-### 2. Remover trilha de auditoria fake (bloqueador de credibilidade)
-- Apagar os 15 logs hardcoded em `PaginaLogs.tsx`.
-- Criar tabela `logs_auditoria` no banco com RLS (apenas admin lê).
-- Registrar eventos reais: login, logout, criação de criança, convite de escola, alteração de papel.
-- Página `/logs` passa a ler do banco — começa vazia e vai populando conforme o cliente navega na demo (isso impressiona).
+Vínculo explícito profissional ↔ criança, substituindo o esquema atual (que infere acesso por sessão/agendamento já existente — origem do problema "psicólogo novo não vê ninguém").
 
-### 3. Seed de dados de exemplo realistas
-- Migrar Crianças, Sessões, Programas e Família dos arquivos `dados*.ts` para o banco com seed inicial.
-- Criar **3 crianças-demo** com nomes fictícios brasileiros, idades variadas, com:
-  - 8-12 sessões cada (últimos 60 dias)
-  - 3-4 programas ativos por criança em níveis de desempenho diferentes
-  - Registros ABC de exemplo
-  - Família vinculada (pai + mãe)
-  - 1 escola já convidada com permissões variadas
-- Gráficos passam a refletir esses dados reais → linhas de evolução fazem sentido.
-
-### 4. Portal da Família (novo)
-- Criar role `familia` que ao logar é redirecionado para `/familia/portal` (não vê barra lateral admin).
-- Tela mostra: foto e nome do filho, próxima sessão agendada, últimas 5 evoluções em linguagem simples (sem jargão técnico), gráfico simplificado de progresso, botão "Falar com a equipe".
-- Criar **conta de família-demo** (`familia@demo.com` / `Familia@2025`) já vinculada a uma das crianças do seed → na reunião você abre uma janela anônima e mostra a visão dos pais ao vivo.
-
-### 5. Portal externo da Escola (completar o que falta)
-- Rota pública `/escola/visao/:token` que valida o `token_convite` da tabela `acessos_escola` sem exigir login na clínica.
-- Mostra apenas o que as permissões do convite autorizam (sessões, evolução, programas).
-- Banner no topo: "Acesso concedido por [Clínica X] — válido até [data]".
-- Na reunião você abre o link em outra aba mostrando "como o professor enxerga".
-
-### 6. Polimento de UI
-- Empty states bonitos em todas as listas (ilustração + texto + CTA), substituindo listas vazias.
-- Skeletons de carregamento em vez de telas em branco enquanto o Supabase responde.
-- Toasts de sucesso em todas as ações principais.
-- Revisar dashboard inicial (`/`): substituir números mock por contagens reais (`SELECT count(*)`).
-
-### 7. Material de apoio para a reunião
-Gerar e salvar em `/mnt/documents/`:
-- **Roteiro de demo** (PDF, ~2 páginas) — passo a passo de 25 minutos cobrindo os 4 módulos na ordem certa, com falas sugeridas.
-- **One-pager comercial** (PDF, 1 página) — problema, solução, diferenciais, próximos passos, valor sugerido.
-- **Checklist pré-reunião** — abrir 3 abas (admin, família, escola), limpar logs, etc.
-
----
-
-## Detalhes técnicos
-
-**Tabelas novas:**
 ```text
-logs_auditoria    (id, user_id, acao, entidade, entidade_id, detalhes jsonb, criado_em)
-criancas          (id, nome, data_nasc, responsavel_id, ativo, criado_em, ...)
-sessoes           (id, crianca_id, terapeuta_id, data, duracao, observacoes, ...)
-programas         (id, crianca_id, nome, dominio, nivel_desempenho, ...)
-familia_membros   (id, crianca_id, user_id, parentesco)
+crianca_responsaveis
+  id uuid pk
+  crianca_id uuid not null
+  funcionario_id uuid not null
+  papel_clinico text  -- "responsavel" | "apoio" (opcional, default 'responsavel')
+  criado_em timestamptz
+  criado_por uuid
+  UNIQUE (crianca_id, funcionario_id)
 ```
-Todas com RLS por `user_id`/papel + função `tem_acesso_crianca(uuid)` (SECURITY DEFINER) para simplificar policies.
 
-**Função SECURITY DEFINER exposta** (alerta atual): adicionar `REVOKE EXECUTE ... FROM authenticated` nas funções utilitárias internas, mantendo apenas `has_role` exposta.
+RLS:
 
-**Novos arquivos principais:**
-- `src/paginas/PaginaPortalFamilia.tsx`
-- `src/paginas/PaginaVisaoEscolaPublica.tsx` (rota pública)
-- `src/componentes/EmptyState.tsx`
-- `src/hooks/useLogAuditoria.tsx`
-- `supabase/migrations/<nova>_logs_auditoria_e_seed.sql`
+- SELECT: admin/coord/recepção (todos) + funcionário vê suas linhas
+- INSERT/DELETE: admin/coord/recepção
 
-**Rota pública:** adicionar `/escola/visao/:token` em `App.tsx` FORA do `<RotaProtegida>`.
+### 1.2 Atualizar `tem_acesso_crianca`
+
+Substituir a parte "psicólogo via sessão/agendamento" por **vínculo direto** em `crianca_responsaveis`:
+
+```sql
+... OR (
+  has_role(_user_id,'psicologo')
+  AND EXISTS (
+    SELECT 1 FROM crianca_responsaveis cr
+    JOIN funcionarios f ON f.id = cr.funcionario_id
+    WHERE cr.crianca_id = _crianca_id AND f.user_id = _user_id
+  )
+)
+```
+
+### 1.3 Policies que precisam destravar para recepção
+
+- `sessoes` INSERT/UPDATE: incluir `recepcionista` (hoje só admin/coord)
+- `programas`, `avaliacoes`: manter como está
+
+### 1.4 `handle_new_user` — fechar autocadastro público
+
+Manter convites para escola/família, **mas** o caminho oficial de funcionário interno passa pela edge `admin-users` (já existe). Garantir que signup direto sem convite NÃO cria mais role `psicologo`/`coordenador`/`recepcionista` (cai sempre em `familia` por padrão — já é o comportamento atual).
 
 ---
 
-## O que NÃO entra nesta etapa
+## 2. Edge function `admin-users` — ajustes
 
-- Envio real de e-mail de convite (escola fica com link copiável apenas)
-- Termo de consentimento LGPD assinável
-- Backup automatizado e exportação LGPD
-- 2FA, criptografia de campos
-- Pagamento/assinatura
+### 2.1 Liberar acesso a coordenador e recepção
 
-Esses ficam para a fase "MVP vendável" (1-2 semanas), após validar interesse na demo.
+Hoje: `if (!ehAdmin) return 403`. Trocar por: aceitar `admin`, `coordenador`, `recepcionista`.
+
+### 2.2 Novo payload `criar` aceita `funcionario_id` opcional
+
+- Se vier, faz `UPDATE funcionarios SET user_id = criado.user.id WHERE id = funcionario_id`.
+- Caso contrário, segue só criando user + role.
+
+### 2.3 Mapear cargo → papel automático
+
+No próprio dialog do funcionário, ao definir cargo:
+
+- Terapeuta/Psicólogo/Fono/TO/Analista → role `psicologo`
+- Coordenador/Supervisor → `coordenador`
+- Recepção → `recepcionista`
+- Administrativo → `admin` (opcional, com confirm)
+
+`email_confirm: true` já está no código → login imediato sem precisar abrir e-mail. ✅
 
 ---
 
-## Resultado esperado
+## 3. UI — Funcionários
 
-Ao final, você consegue:
-1. Abrir a reunião com a landing nova → dono entende o produto em 30 segundos
-2. Login automático → entra direto numa clínica com 3 crianças, dados ricos, gráficos bonitos
-3. Demonstrar os 4 módulos seguindo o roteiro impresso
-4. Abrir aba anônima e mostrar a visão da família e a visão da escola ao vivo
-5. Encerrar com o one-pager comercial impresso na mão do cliente
+### 3.1 `DialogoFuncionario` ganha aba/sessão "Acesso ao sistema"
+
+Campos extras quando **criando**:
+
+- `criarAcesso: boolean` (default ON)
+- `senhaInicial: string` (mínimo 10 chars, regras do `validar_forca_senha`)
+- Visual: aviso "O profissional poderá entrar imediatamente com este e-mail e senha"
+
+Quando **editando** funcionário que já tem `user_id`:
+
+- Mostrar badge "Acesso ativo · papel X"
+- Botão "Redefinir senha" (chama `admin-users` com nova ação `redefinir_senha`)
+- Botão "Revogar acesso" (chama `admin-users` ação `remover`)
+
+### 3.2 Fluxo de salvar (no `PaginaFuncionarios.salvar`)
+
+1. INSERT em `funcionarios` (como hoje).
+2. Se `criarAcesso` marcado e novo: chamar edge `admin-users` { acao: "criar", email, senha, nome_completo, papel: derivado do cargo, funcionario_id: linhaSalva.id }.
+3. Toast: "Funcionário cadastrado. Acesso liberado para login."
+
+---
+
+## 4. UI — Atribuição de crianças
+
+### 4.1 Novo componente `SeletorResponsaveis`
+
+- Multi-select dos `funcionarios ativos` (com cargo clínico).
+- Estado: array de `funcionario_id`.
+- Visual: chips removíveis + combobox para adicionar.
+
+### 4.2 Onde usar
+
+**(a) `DialogoNovaCrianca**` — após criar a criança, fazer INSERT em `crianca_responsaveis` para cada selecionado.
+
+**(b) Pasta da criança → aba "Cadastro"** — adicionar seção "Profissionais responsáveis" com `SeletorResponsaveis`:
+
+- Carrega vínculos atuais.
+- Adicionar = INSERT; remover = DELETE.
+- Visível só para admin/coord/recepção (esconder para psicólogo).
+
+### 4.3 Hook `useResponsaveisCrianca(criancaId)`
+
+- `listar()` → join `crianca_responsaveis` × `funcionarios`
+- `adicionar(funcionarioId)`
+- `remover(vinculoId)`
+
+---
+
+## 5. Limpezas
+
+- `**PaginaUsuarios**` (`/usuarios`): manter para admin, mas adicionar nota "Para criar profissionais clínicos, use Funcionários". Sem mudança funcional.
+- **Sidebar**: deixar `Funcionários` como ponto único de criação de profissionais. Esconder "Usuários" exceto admin (já está).
+- **Confirmações duplas**: ao desativar funcionário com `user_id`, perguntar se revoga acesso também.
+
+---
+
+## 6. Ordem de execução (PRs pequenos)
+
+1. **Migração**: tabela `crianca_responsaveis` + RLS + atualizar `tem_acesso_crianca` + abrir RLS de `sessoes` para recepção.
+2. **Edge `admin-users**`: aceitar coord/recep; adicionar parâmetro `funcionario_id` e ação `redefinir_senha`.
+3. `**DialogoFuncionario` + `PaginaFuncionarios.salvar**`: aba acesso + chamada à edge.
+4. `**SeletorResponsaveis` + hook**: componente isolado.
+5. `**DialogoNovaCrianca**`: integrar seletor (atribuição no cadastro).
+6. **Pasta da criança → Cadastro**: seção editável de responsáveis (adiciona/remove).
+7. **Smoke test manual**: criar psicólogo → atribuir criança → logar como psicólogo → verificar isolamento.
+
+---
+
+## 7. Critérios de aceite
+
+- ✅ Recepção cria funcionário com senha; profissional faz login no ato (sem e-mail).
+- ✅ Profissional clínico só vê crianças com vínculo em `crianca_responsaveis`.
+- ✅ Profissional clínico **não** vê `/funcionarios`, `/usuarios`, `/configuracoes` admin (já garantido pela sidebar + RotaAdmin).
+- ✅ Admin/Coord/Recepção continuam vendo todas as crianças.
+- ✅ Adicionar/remover vínculo na pasta da criança funciona e é refletido no acesso do profissional em tempo real (após reload).
+- ✅ Sessões antigas continuam acessíveis (a função `tem_acesso_crianca` mantém fallbacks via sessões/agendamentos preexistentes ou os migramos para vínculos).
+- ✅ Nenhuma quebra em portal família ou visão escola.
+
+---
+
+## 8. Decisões pendentes (preciso confirmar antes de codar)
+
+1. **Migrar histórico**: quero criar automaticamente vínculos em `crianca_responsaveis` para todos os pares (`crianca_id`, `terapeuta_id` de funcionarios) já existentes em `sessoes`/`agendamentos`? Recomendo **sim**, para não quebrar acesso de profissionais que já atendem. 
+  Sim.
+2. **Recepcionista pode criar admin?** Recomendo **não** — apenas admin cria admin. Coord/Recep criam psicólogo/coord/recep.  
+Não.
+3. **Senha inicial**: gerada automaticamente pelo sistema (mais simples, copia e cola) **ou** digitada pelo gestor? Recomendo **gerada + opção "mostrar/copiar"**, evita senhas fracas.  
+**Não - digitada pelo gestor.**
+4. **Cargos "Administrativo" e "Supervisor"** mapeiam para qual `app_role`? Sugiro Administrativo→`recepcionista`, Supervisor→`coordenador`.  
+Administrativo→`recepcionista`, Supervisor→`coordenador`
+
+Aguardando aprovação do plano (ou ajustes nas 4 decisões acima) para começar pela migração.

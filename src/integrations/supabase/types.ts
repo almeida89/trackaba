@@ -338,6 +338,33 @@ export type Database = {
         }
         Relationships: []
       }
+      crianca_responsaveis: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          crianca_id: string
+          funcionario_id: string
+          id: string
+          papel_clinico: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id: string
+          funcionario_id: string
+          id?: string
+          papel_clinico?: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string | null
+          crianca_id?: string
+          funcionario_id?: string
+          id?: string
+          papel_clinico?: string
+        }
+        Relationships: []
+      }
       criancas: {
         Row: {
           acomp_escolar_horario: string | null

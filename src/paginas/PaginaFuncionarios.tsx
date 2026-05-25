@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
-import { DialogoFuncionario } from "@/componentes/funcionarios/DialogoFuncionario";
+import { DialogoFuncionario, type DadosAcesso } from "@/componentes/funcionarios/DialogoFuncionario";
 import { cargosDisponiveis } from "@/componentes/funcionarios/dadosFuncionarios";
 import {
   Funcionario,
@@ -171,19 +171,31 @@ export default function PaginaFuncionarios() {
     setDialogoAberto(true);
   };
 
-  const salvar = async (f: Funcionario): Promise<boolean> => {
+  const papelDoCargo = (cargo: Funcionario["cargo"]): "psicologo" | "coordenador" | "recepcionista" | "admin" => {
+    // Mapeia o cargo do dialog para o papel (app_role) do sistema.
+    switch (cargo) {
+      case "Coordernador(a) Clínico(a)":
+      case "Supervisor(a)":
+        return "coordenador";
+      case "Recepção":
+      case "Administrativo":
+        return "recepcionista";
+      default:
+        return "psicologo";
+    }
+  };
+
+  const salvar = async (f: Funcionario, acesso: DadosAcesso): Promise<boolean> => {
     const payload = {
       nome_completo: f.nome,
       email: f.email,
       telefone: f.telefone || null,
-      // Salva cargo macro para permissões e sub_cargo para especialidade exibida no select.
       cargo: cargoMacroPorSubcargo[f.cargo] || "terapeuta",
       sub_cargo: f.cargo,
       registro_conselho: f.registroProfissional || null,
       especialidade: f.especialidades.length ? f.especialidades.join(", ") : null,
       ativo: f.status === "ativo",
       data_admissao: f.dataAdmissao || null,
-      // Agora persiste no campo correto da tabela, sem usar observações.
       nivel_acesso: f.nivelAcesso,
       carga_horaria_semanal: f.cargaHorariaSemanal,
     };
@@ -205,10 +217,32 @@ export default function PaginaFuncionarios() {
     const linhaSalva = data?.[0];
 
     if (!linhaSalva) {
-      toast.error(
-        "Sem permissão para salvar este funcionário ou registro não encontrado."
-      );
+      toast.error("Sem permissão para salvar este funcionário ou registro não encontrado.");
       return false;
+    }
+
+    // Cria acesso ao sistema imediatamente, se solicitado
+    if (!isEdicao && acesso.criarAcesso) {
+      const papel = papelDoCargo(f.cargo);
+      const { data: resp, error: edgeErr } = await supabase.functions.invoke("admin-users", {
+        body: {
+          acao: "criar",
+          email: f.email,
+          senha: acesso.senha,
+          nome_completo: f.nome,
+          telefone: f.telefone || null,
+          papel,
+          funcionario_id: linhaSalva.id,
+        },
+      });
+      if (edgeErr || (resp as { erro?: string })?.erro) {
+        const msg = (resp as { erro?: string })?.erro || edgeErr?.message || "Falha ao criar acesso";
+        console.error("[funcionarios] erro ao criar acesso", { edgeErr, resp });
+        toast.error(`Funcionário cadastrado, mas falhou ao criar acesso: ${msg}`);
+        // Não bloqueia o sucesso do cadastro do funcionário
+      } else {
+        toast.success("Acesso liberado: o profissional já pode entrar no sistema.");
+      }
     }
 
     setFuncionarios((prev) => {

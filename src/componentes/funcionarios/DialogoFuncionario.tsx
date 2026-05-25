@@ -24,12 +24,19 @@ import {
 } from "./dadosFuncionarios";
 import { toast } from "sonner";
 import { mascararTelefone } from "@/lib/mascaras";
+import { Switch } from "@/components/ui/switch";
+import { ShieldCheck } from "lucide-react";
+
+export interface DadosAcesso {
+  criarAcesso: boolean;
+  senha: string;
+}
 
 interface Props {
   aberto: boolean;
   aoFechar: () => void;
   funcionario?: Funcionario | null;
-  aoSalvar: (f: Funcionario) => Promise<boolean>;
+  aoSalvar: (f: Funcionario, acesso: DadosAcesso) => Promise<boolean>;
 }
 
 const vazio = (): Funcionario => ({
@@ -57,20 +64,32 @@ export function DialogoFuncionario({
 }: Props) {
   const [form, setForm] = useState<Funcionario>(vazio());
   const [especialidadesTexto, setEspecialidadesTexto] = useState("");
+  const [criarAcesso, setCriarAcesso] = useState(true);
+  const [senha, setSenha] = useState("");
+
+  const editando = !!funcionario;
 
   useEffect(() => {
     if (funcionario) {
       setForm(funcionario);
       setEspecialidadesTexto(funcionario.especialidades.join(", "));
+      setCriarAcesso(false);
+      setSenha("");
     } else {
       setForm(vazio());
       setEspecialidadesTexto("");
+      setCriarAcesso(true);
+      setSenha("");
     }
   }, [funcionario, aberto]);
 
   const salvar = async () => {
     if (!form.nome.trim() || !form.email.trim()) {
       toast.error("Preencha nome e e-mail");
+      return;
+    }
+    if (!editando && criarAcesso && senha.length < 10) {
+      toast.error("Senha deve ter ao menos 10 caracteres");
       return;
     }
     const partes = form.nome.trim().split(" ").filter(Boolean);
@@ -80,11 +99,10 @@ export function DialogoFuncionario({
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const sucesso = await aoSalvar({
-      ...form,
-      iniciais: iniciais.toUpperCase(),
-      especialidades,
-    });
+    const sucesso = await aoSalvar(
+      { ...form, iniciais: iniciais.toUpperCase(), especialidades },
+      { criarAcesso: !editando && criarAcesso, senha },
+    );
 
     if (!sucesso) return;
 
@@ -252,6 +270,45 @@ export function DialogoFuncionario({
             />
           </div>
         </div>
+
+        {!editando && (
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-sm font-medium">Acesso ao sistema</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cria login imediato — o profissional já pode entrar com este e-mail.
+                  </p>
+                </div>
+              </div>
+              <Switch checked={criarAcesso} onCheckedChange={setCriarAcesso} />
+            </div>
+            {criarAcesso && (
+              <div className="space-y-2">
+                <Label>Senha inicial *</Label>
+                <Input
+                  type="text"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  placeholder="Mín. 10 caracteres, com maiúscula, número e símbolo"
+                  autoComplete="new-password"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Anote e compartilhe com o profissional. Ele poderá alterar após o primeiro login.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {editando && (
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+            Para redefinir senha ou revogar acesso, use as ações na listagem (em breve).
+          </div>
+        )}
+
 
         <DialogFooter>
           <Button variant="outline" onClick={aoFechar}>
