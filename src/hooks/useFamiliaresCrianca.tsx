@@ -126,7 +126,7 @@ export function useFamiliaresCrianca(criancaId: string | undefined) {
         .eq("id", params.vinculoId);
       if (e1) throw e1;
       if (params.nome !== undefined || params.telefone !== undefined) {
-        const patch: Record<string, string | null> = {};
+        const patch: { nome_completo?: string; telefone?: string | null } = {};
         if (params.nome !== undefined) patch.nome_completo = params.nome;
         if (params.telefone !== undefined) patch.telefone = params.telefone;
         const { error: e2 } = await supabase
