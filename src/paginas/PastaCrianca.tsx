@@ -218,6 +218,7 @@ export default function PastaCrianca() {
       case "sessoes":
         return <SessoesCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "familiar":
+        if (ehPsicologo) return <PlaceholderAba titulo="Indisponível" />;
         return <SecaoFamiliarCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "medico":
         return (
