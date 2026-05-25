@@ -15,6 +15,8 @@ import { useCriancas } from "@/hooks/useCriancas";
 import { criancaSchema, type CriancaForm } from "@/schemas/crianca";
 import { mascararTelefone } from "@/lib/mascaras";
 import { toast } from "sonner";
+import { SeletorResponsaveis } from "./SeletorResponsaveis";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   aberto: boolean;
