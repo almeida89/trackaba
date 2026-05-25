@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CartaoEstatistica } from "@/componentes/CartaoEstatistica";
-import { DialogoFuncionario } from "@/componentes/funcionarios/DialogoFuncionario";
+import { DialogoFuncionario, type DadosAcesso } from "@/componentes/funcionarios/DialogoFuncionario";
 import { cargosDisponiveis } from "@/componentes/funcionarios/dadosFuncionarios";
 import {
   Funcionario,
