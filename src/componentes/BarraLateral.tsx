@@ -33,6 +33,7 @@ interface ItemMenu {
   url: string;
   icone: typeof LayoutDashboard;
   somenteAdmin?: boolean;
+  papeisPermitidos?: Array<"admin" | "psicologo" | "coordenador" | "recepcionista" | "familia">;
 }
 
 interface SecaoMenu {
@@ -51,10 +52,10 @@ const secoesMenu: SecaoMenu[] = [
     titulo: "Clínico",
     itens: [
       { titulo: "Crianças", url: "/criancas", icone: Baby },
-      { titulo: "Sessões", url: "/sessoes", icone: ClipboardList },
-      { titulo: "Programas", url: "/programas", icone: BookOpen },
-      { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck },
-      { titulo: "Agenda", url: "/agenda", icone: Calendar },
+      { titulo: "Sessões", url: "/sessoes", icone: ClipboardList, papeisPermitidos: ["admin", "psicologo"] },
+      { titulo: "Programas", url: "/programas", icone: BookOpen, papeisPermitidos: ["admin", "psicologo"] },
+      { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck, papeisPermitidos: ["admin", "psicologo"] },
+      { titulo: "Agenda", url: "/agenda", icone: Calendar, papeisPermitidos: ["admin", "psicologo", "coordenador", "recepcionista"] },
     ],
   },
   {
@@ -81,7 +82,15 @@ export function BarraLateral() {
   const { user, sair } = useAuth();
   const { papel, perfil, isAdmin } = useUserRole();
   const secoesVisiveis = secoesMenu
-    .map((s) => ({ ...s, itens: s.itens.filter((i) => !i.somenteAdmin || isAdmin) }))
+    .map((s) => ({
+      ...s,
+      itens: s.itens.filter((i) => {
+        if (i.somenteAdmin && !isAdmin) return false;
+        if (i.papeisPermitidos && (!papel || !i.papeisPermitidos.includes(papel))) return false;
+        return true;
+      }),
+    }))
+    .filter((s) => !(papel === "psicologo" && s.titulo === "Relacionamento"))
     .filter((s) => s.itens.length > 0);
   const navigate = useNavigate();
 

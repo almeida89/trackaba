@@ -103,7 +103,12 @@ export function useFamiliaresCrianca(criancaId: string | undefined) {
       toast.success("Familiar cadastrado com acesso ao portal");
       qc.invalidateQueries({ queryKey: ["familia-membros", criancaId] });
     },
-    onError: (e: Error) => toast.error("Erro ao cadastrar familiar: " + e.message),
+    onError: (e: Error) => {
+      const msg = e.message?.includes("Failed to send a request to the Edge Function")
+        ? "Falha ao chamar a Edge Function 'admin-users'. Verifique se ela está publicada e se SUPABASE_URL/ANON_KEY estão corretos."
+        : e.message;
+      toast.error("Erro ao cadastrar familiar: " + msg);
+    },
   });
 
   const atualizar = useMutation({

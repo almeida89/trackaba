@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -154,6 +154,15 @@ export default function PastaCrianca() {
   const navegar = useNavigate();
   const { crianca, carregando, enviarFoto, enviandoFoto, atualizar, salvando } = useCrianca(id);
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
+  const { papel } = useUserRole();
+  const abasVisiveis = abas.filter((aba) => !(papel === "psicologo" && aba.id === "familiar"));
+
+  useEffect(() => {
+    if (!abasVisiveis.some((aba) => aba.id === abaAtiva)) {
+      setAbaAtiva("cadastro");
+    }
+  }, [abaAtiva, abasVisiveis]);
+
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
   const aoSelecionarFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,7 +269,7 @@ export default function PastaCrianca() {
       case "relatorios":
         return <RelatoriosCrianca crianca={crianca} />;
       default:
-        return <PlaceholderAba titulo={abas.find((a) => a.id === abaAtiva)?.label || ""} />;
+        return <PlaceholderAba titulo={abasVisiveis.find((a) => a.id === abaAtiva)?.label || ""} />;
     }
   };
 
@@ -332,7 +341,7 @@ export default function PastaCrianca() {
       {/* Tabs */}
       <div className="border-b border-border overflow-x-auto print:hidden">
         <div className="flex gap-1 min-w-max pb-px">
-          {abas.map((aba) => (
+          {abasVisiveis.map((aba) => (
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}
