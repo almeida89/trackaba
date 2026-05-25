@@ -153,6 +153,9 @@ export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { crianca, carregando, enviarFoto, enviandoFoto, atualizar, salvando } = useCrianca(id);
+  const { papel } = useUserRole();
+  const ehPsicologo = papel === "psicologo";
+  const abasVisiveis = abas.filter((a) => !(ehPsicologo && a.id === "familiar"));
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
