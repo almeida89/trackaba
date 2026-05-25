@@ -165,6 +165,19 @@ export function DialogoNovaCrianca({ aberto, aoFechar }: Props) {
           </div>
 
           <div>
+            <Label>Profissionais responsáveis</Label>
+            <SeletorResponsaveis
+              selecionados={responsaveis}
+              aoAdicionar={(f) =>
+                setResponsaveis((s) => [...s, { funcionarioId: f.id, nome: f.nome, cargo: f.cargo }])
+              }
+              aoRemover={(id) =>
+                setResponsaveis((s) => s.filter((r) => r.funcionarioId !== id))
+              }
+            />
+          </div>
+
+          <div>
             <Label htmlFor="obs">Observações</Label>
             <Textarea
               id="obs"
