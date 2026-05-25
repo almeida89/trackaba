@@ -28,11 +28,13 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import type { AppRole } from "@/hooks/useUserRole";
+
 interface ItemMenu {
   titulo: string;
   url: string;
   icone: typeof LayoutDashboard;
-  somenteAdmin?: boolean;
+  papeis: AppRole[];
 }
 
 interface SecaoMenu {
@@ -40,38 +42,44 @@ interface SecaoMenu {
   itens: ItemMenu[];
 }
 
+const CLINICO: AppRole[] = ["admin", "psicologo", "coordenador", "recepcionista"];
+const RELACIONAMENTO: AppRole[] = ["admin", "coordenador", "recepcionista"];
+const SOMENTE_ADMIN: AppRole[] = ["admin"];
+const ADMIN_RECEP: AppRole[] = ["admin", "recepcionista"];
+const ADMIN_COORD_RECEP: AppRole[] = ["admin", "coordenador", "recepcionista"];
+
 const secoesMenu: SecaoMenu[] = [
   {
     titulo: "Geral",
     itens: [
-      { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
+      { titulo: "Dashboard", url: "/", icone: LayoutDashboard, papeis: CLINICO },
     ],
   },
   {
     titulo: "Clínico",
     itens: [
-      { titulo: "Crianças", url: "/criancas", icone: Baby },
-      { titulo: "Sessões", url: "/sessoes", icone: ClipboardList },
-      { titulo: "Programas", url: "/programas", icone: BookOpen },
-      { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck },
-      { titulo: "Agenda", url: "/agenda", icone: Calendar },
+      { titulo: "Crianças", url: "/criancas", icone: Baby, papeis: CLINICO },
+      { titulo: "Sessões", url: "/sessoes", icone: ClipboardList, papeis: CLINICO },
+      { titulo: "Programas", url: "/programas", icone: BookOpen, papeis: CLINICO },
+      { titulo: "Avaliações", url: "/avaliacoes", icone: FileCheck, papeis: CLINICO },
+      { titulo: "Agenda", url: "/agenda", icone: Calendar, papeis: CLINICO },
     ],
   },
   {
     titulo: "Relacionamento",
     itens: [
-      { titulo: "Família", url: "/familia", icone: Heart },
-      { titulo: "Escola", url: "/escola", icone: GraduationCap },
+      { titulo: "Família", url: "/familia", icone: Heart, papeis: RELACIONAMENTO },
+      { titulo: "Escola", url: "/escola", icone: GraduationCap, papeis: RELACIONAMENTO },
     ],
   },
   {
     titulo: "Administração",
     itens: [
-      { titulo: "Funcionários", url: "/funcionarios", icone: Users, somenteAdmin: true },
-      { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
-      { titulo: "Automações", url: "/automacoes", icone: Zap, somenteAdmin: true },
-      { titulo: "Configurações", url: "/configuracoes", icone: Settings, somenteAdmin: true },
-      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield, somenteAdmin: true },
+      { titulo: "Funcionários", url: "/funcionarios", icone: Users, papeis: ADMIN_COORD_RECEP },
+      { titulo: "Usuários", url: "/usuarios", icone: UserCog, papeis: ADMIN_RECEP },
+      { titulo: "Automações", url: "/automacoes", icone: Zap, papeis: SOMENTE_ADMIN },
+      { titulo: "Configurações", url: "/configuracoes", icone: Settings, papeis: SOMENTE_ADMIN },
+      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield, papeis: SOMENTE_ADMIN },
     ],
   },
 ];
@@ -81,7 +89,7 @@ export function BarraLateral() {
   const { user, sair } = useAuth();
   const { papel, perfil, isAdmin } = useUserRole();
   const secoesVisiveis = secoesMenu
-    .map((s) => ({ ...s, itens: s.itens.filter((i) => !i.somenteAdmin || isAdmin) }))
+    .map((s) => ({ ...s, itens: s.itens.filter((i) => papel && i.papeis.includes(papel)) }))
     .filter((s) => s.itens.length > 0);
   const navigate = useNavigate();
 

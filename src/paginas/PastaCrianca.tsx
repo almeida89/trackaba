@@ -153,6 +153,9 @@ export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { crianca, carregando, enviarFoto, enviandoFoto, atualizar, salvando } = useCrianca(id);
+  const { papel } = useUserRole();
+  const ehPsicologo = papel === "psicologo";
+  const abasVisiveis = abas.filter((a) => !(ehPsicologo && a.id === "familiar"));
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
@@ -215,6 +218,7 @@ export default function PastaCrianca() {
       case "sessoes":
         return <SessoesCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "familiar":
+        if (ehPsicologo) return <PlaceholderAba titulo="Indisponível" />;
         return <SecaoFamiliarCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "medico":
         return (
@@ -332,7 +336,7 @@ export default function PastaCrianca() {
       {/* Tabs */}
       <div className="border-b border-border overflow-x-auto print:hidden">
         <div className="flex gap-1 min-w-max pb-px">
-          {abas.map((aba) => (
+          {abasVisiveis.map((aba) => (
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}

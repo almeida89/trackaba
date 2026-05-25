@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { RotaProtegida } from "@/componentes/RotaProtegida";
 import { RotaEquipe } from "@/componentes/RotaEquipe";
 import { RotaAdmin } from "@/componentes/RotaAdmin";
+import { RotaPapeis } from "@/componentes/RotaPapeis";
 import PaginaAuth from "@/paginas/PaginaAuth";
 import PaginaResetSenha from "@/paginas/PaginaResetSenha";
 import PaginaUsuarios from "@/paginas/PaginaUsuarios";
@@ -38,15 +39,43 @@ const RotasInternas = () => (
       <Route path="/" element={<PainelPrincipal />} />
       <Route path="/criancas" element={<ListaCriancas />} />
       <Route path="/criancas/:id" element={<PastaCrianca />} />
-      <Route path="/funcionarios" element={<RotaAdmin><PaginaFuncionarios /></RotaAdmin>} />
+      <Route
+        path="/funcionarios"
+        element={
+          <RotaPapeis papeis={["admin", "coordenador", "recepcionista"]}>
+            <PaginaFuncionarios />
+          </RotaPapeis>
+        }
+      />
       <Route path="/sessoes" element={<PaginaSessoes />} />
       <Route path="/programas" element={<PaginaProgramas />} />
       <Route path="/avaliacoes" element={<PaginaAvaliacoes />} />
       <Route path="/agenda" element={<PaginaAgenda />} />
-      <Route path="/escola" element={<PaginaEscola />} />
-      <Route path="/familia" element={<PaginaFamilia />} />
+      <Route
+        path="/escola"
+        element={
+          <RotaPapeis papeis={["admin", "coordenador", "recepcionista"]}>
+            <PaginaEscola />
+          </RotaPapeis>
+        }
+      />
+      <Route
+        path="/familia"
+        element={
+          <RotaPapeis papeis={["admin", "coordenador", "recepcionista"]}>
+            <PaginaFamilia />
+          </RotaPapeis>
+        }
+      />
       <Route path="/automacoes" element={<RotaAdmin><PaginaModulo /></RotaAdmin>} />
-      <Route path="/usuarios" element={<RotaAdmin><PaginaUsuarios /></RotaAdmin>} />
+      <Route
+        path="/usuarios"
+        element={
+          <RotaPapeis papeis={["admin", "recepcionista"]}>
+            <PaginaUsuarios />
+          </RotaPapeis>
+        }
+      />
       <Route path="/configuracoes" element={<RotaAdmin><PaginaConfiguracoes /></RotaAdmin>} />
       <Route path="/logs" element={<RotaAdmin><PaginaLogs /></RotaAdmin>} />
       <Route path="*" element={<NotFound />} />
