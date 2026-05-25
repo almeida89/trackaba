@@ -64,20 +64,32 @@ export function DialogoFuncionario({
 }: Props) {
   const [form, setForm] = useState<Funcionario>(vazio());
   const [especialidadesTexto, setEspecialidadesTexto] = useState("");
+  const [criarAcesso, setCriarAcesso] = useState(true);
+  const [senha, setSenha] = useState("");
+
+  const editando = !!funcionario;
 
   useEffect(() => {
     if (funcionario) {
       setForm(funcionario);
       setEspecialidadesTexto(funcionario.especialidades.join(", "));
+      setCriarAcesso(false);
+      setSenha("");
     } else {
       setForm(vazio());
       setEspecialidadesTexto("");
+      setCriarAcesso(true);
+      setSenha("");
     }
   }, [funcionario, aberto]);
 
   const salvar = async () => {
     if (!form.nome.trim() || !form.email.trim()) {
       toast.error("Preencha nome e e-mail");
+      return;
+    }
+    if (!editando && criarAcesso && senha.length < 10) {
+      toast.error("Senha deve ter ao menos 10 caracteres");
       return;
     }
     const partes = form.nome.trim().split(" ").filter(Boolean);
@@ -87,11 +99,10 @@ export function DialogoFuncionario({
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const sucesso = await aoSalvar({
-      ...form,
-      iniciais: iniciais.toUpperCase(),
-      especialidades,
-    });
+    const sucesso = await aoSalvar(
+      { ...form, iniciais: iniciais.toUpperCase(), especialidades },
+      { criarAcesso: !editando && criarAcesso, senha },
+    );
 
     if (!sucesso) return;
 
