@@ -69,27 +69,6 @@ export function SeletorResponsaveis({ selecionados, aoAdicionar, aoRemover, desa
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 min-h-9">
-        {selecionados.length === 0 && (
-          <span className="text-xs text-muted-foreground">Nenhum profissional vinculado</span>
-        )}
-        {selecionados.map((s) => (
-          <Badge key={s.funcionarioId} variant="secondary" className="gap-1.5 py-1 px-2">
-            <span>{s.nome}</span>
-            {s.cargo && <span className="text-[10px] text-muted-foreground">· {s.cargo}</span>}
-            {!desabilitado && (
-              <button
-                type="button"
-                onClick={() => aoRemover(s.funcionarioId)}
-                className="hover:text-destructive"
-                aria-label={`Remover ${s.nome}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </Badge>
-        ))}
-      </div>
       {!desabilitado && (
         <div className="flex gap-2">
           <Select value={valor} onValueChange={setValor}>
@@ -115,6 +94,32 @@ export function SeletorResponsaveis({ selecionados, aoAdicionar, aoRemover, desa
           </Button>
         </div>
       )}
+      <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-2">
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1.5">
+          Profissionais vinculados
+        </p>
+        <div className="flex flex-wrap gap-2 min-h-7">
+          {selecionados.length === 0 && (
+            <span className="text-xs text-muted-foreground">Nenhum profissional vinculado ainda</span>
+          )}
+          {selecionados.map((s) => (
+            <Badge key={s.funcionarioId} variant="secondary" className="gap-1.5 py-1 px-2">
+              <span>{s.nome}</span>
+              {s.cargo && <span className="text-[10px] text-muted-foreground">· {s.cargo}</span>}
+              {!desabilitado && (
+                <button
+                  type="button"
+                  onClick={() => aoRemover(s.funcionarioId)}
+                  className="hover:text-destructive"
+                  aria-label={`Remover ${s.nome}`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </Badge>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
