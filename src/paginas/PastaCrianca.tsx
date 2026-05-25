@@ -335,7 +335,7 @@ export default function PastaCrianca() {
       {/* Tabs */}
       <div className="border-b border-border overflow-x-auto print:hidden">
         <div className="flex gap-1 min-w-max pb-px">
-          {abas.map((aba) => (
+          {abasVisiveis.map((aba) => (
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}
