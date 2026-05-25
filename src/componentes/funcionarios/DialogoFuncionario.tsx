@@ -24,12 +24,19 @@ import {
 } from "./dadosFuncionarios";
 import { toast } from "sonner";
 import { mascararTelefone } from "@/lib/mascaras";
+import { Switch } from "@/components/ui/switch";
+import { ShieldCheck } from "lucide-react";
+
+export interface DadosAcesso {
+  criarAcesso: boolean;
+  senha: string;
+}
 
 interface Props {
   aberto: boolean;
   aoFechar: () => void;
   funcionario?: Funcionario | null;
-  aoSalvar: (f: Funcionario) => Promise<boolean>;
+  aoSalvar: (f: Funcionario, acesso: DadosAcesso) => Promise<boolean>;
 }
 
 const vazio = (): Funcionario => ({
