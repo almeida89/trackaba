@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, User, Bell, Plug, Shield, Palette, Save, Trash2, KeyRound, Mail, MessageSquare, Calendar as CalendarIcon, FileSignature, Users } from "lucide-react";
+import { Building2, User, Bell, Plug, Shield, Save, Trash2, Mail, MessageSquare, Calendar as CalendarIcon, FileSignature, Users } from "lucide-react";
 import { AbaUsuarios } from "@/componentes/configuracoes/AbaUsuarios";
 import { toast } from "sonner";
 import { hasAdminAccess } from "@/lib/acessoCargo";
+import { mascararCep, mascararCnpj, mascararTelefone, apenasDigitos } from "@/lib/mascaras";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import type { CargoFuncionario } from "@/componentes/funcionarios/tiposFuncionarios";
 
 export default function PaginaConfiguracoes() {
@@ -44,7 +47,6 @@ export default function PaginaConfiguracoes() {
   const [notif, setNotif] = useState({
     emailSessoes: true,
     emailRelatorios: true,
-    emailFinanceiro: false,
     pushAgendamentos: true,
     whatsappLembretes: true,
     resumoSemanal: true,
@@ -66,14 +68,84 @@ export default function PaginaConfiguracoes() {
     auditoria: true,
   });
 
-  // Aparência
-  const [aparencia, setAparencia] = useState({
-    tema: "claro",
-    densidade: "confortavel",
-    idioma: "pt-BR",
-    fusoHorario: "America/Sao_Paulo",
-    formatoData: "dd/MM/yyyy",
-  });
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const carregarDados = async () => {
+      if (!user) return;
+
+      const [{ data: perfilData }, { data: clinicaData }] = await Promise.all([
+        supabase.from("profiles").select("nome_completo, telefone").eq("id", user.id).maybeSingle(),
+        supabase.from("clinica_config").select("nome, cnpj, email, telefone, endereco, cep, configuracoes").limit(1).maybeSingle(),
+      ]);
+
+      if (perfilData) {
+        setPerfil((anterior) => ({
+          ...anterior,
+          nome: perfilData.nome_completo ?? anterior.nome,
+          email: user.email ?? anterior.email,
+          telefone: mascararTelefone(perfilData.telefone ?? ""),
+        }));
+      }
+
+      if (clinicaData) {
+        const configuracoes = (clinicaData.configuracoes as Record<string, string> | null) ?? {};
+        setClinica((anterior) => ({
+          ...anterior,
+          razaoSocial: clinicaData.nome ?? anterior.razaoSocial,
+          nomeFantasia: configuracoes.nomeFantasia ?? anterior.nomeFantasia,
+          cnpj: mascararCnpj(clinicaData.cnpj ?? ""),
+          responsavelTecnico: configuracoes.responsavelTecnico ?? anterior.responsavelTecnico,
+          registroProfissional: configuracoes.registroProfissional ?? anterior.registroProfissional,
+          email: clinicaData.email ?? anterior.email,
+          telefone: mascararTelefone(clinicaData.telefone ?? ""),
+          endereco: clinicaData.endereco ?? anterior.endereco,
+          cep: mascararCep(clinicaData.cep ?? ""),
+          horarioAtendimento: configuracoes.horarioAtendimento ?? anterior.horarioAtendimento,
+          politicaCancelamento: configuracoes.politicaCancelamento ?? anterior.politicaCancelamento,
+        }));
+      }
+    };
+
+    void carregarDados();
+  }, [user]);
+
+  const salvarClinica = async () => {
+    // Antes o botão apenas disparava toast e não enviava nada ao banco.
+    // Agora realizamos upsert no Supabase para persistir de fato as alterações.
+    const payload = {
+      nome: clinica.razaoSocial,
+      cnpj: apenasDigitos(clinica.cnpj),
+      email: clinica.email,
+      telefone: apenasDigitos(clinica.telefone),
+      endereco: clinica.endereco,
+      cep: apenasDigitos(clinica.cep),
+      configuracoes: {
+        nomeFantasia: clinica.nomeFantasia,
+        responsavelTecnico: clinica.responsavelTecnico,
+        registroProfissional: clinica.registroProfissional,
+        horarioAtendimento: clinica.horarioAtendimento,
+        politicaCancelamento: clinica.politicaCancelamento,
+      },
+    };
+
+    const { error } = await supabase.from("clinica_config").upsert(payload);
+    if (error) return toast.error("Não foi possível salvar os dados da clínica.");
+    toast.success("Dados da clínica salvo(a) com sucesso");
+  };
+
+  const salvarPerfil = async () => {
+    if (!user) return toast.error("Usuário não autenticado.");
+
+    // A falha de persistência também ocorria aqui pelo mesmo motivo: sem update remoto.
+    const { error } = await supabase
+      .from("profiles")
+      .update({ nome_completo: perfil.nome, telefone: apenasDigitos(perfil.telefone) })
+      .eq("id", user.id);
+
+    if (error) return toast.error("Não foi possível salvar o perfil.");
+    toast.success("Perfil salvo(a) com sucesso");
+  };
 
   const salvar = (secao: string) => toast.success(`${secao} salvo(a) com sucesso`);
 
@@ -86,21 +158,20 @@ export default function PaginaConfiguracoes() {
       <div>
         <h1 className="text-2xl font-heading font-bold text-foreground">Configurações</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gerencie a clínica, sua conta, notificações, integrações, segurança e aparência do sistema.
+          Gerencie a clínica, sua conta, notificações, integrações e segurança do sistema.
         </p>
       </div>
 
       <Tabs defaultValue="clinica" className="w-full">
         <div className="-mx-3 sm:-mx-4 lg:mx-0 overflow-x-auto">
-        <TabsList className={`inline-flex w-max lg:w-full lg:grid ${podeVerAbasAdmin ? "lg:grid-cols-7" : "lg:grid-cols-5"} px-3 sm:px-4 lg:px-0`}>
+        <TabsList className={`inline-flex w-max lg:w-full lg:grid ${podeVerAbasAdmin ? "lg:grid-cols-6" : "lg:grid-cols-4"} px-3 sm:px-4 lg:px-0`}>
           <TabsTrigger value="clinica"><Building2 className="h-4 w-4 mr-1.5" />Clínica</TabsTrigger>
           <TabsTrigger value="perfil"><User className="h-4 w-4 mr-1.5" />Perfil</TabsTrigger>
           {podeVerAbasAdmin && (<TabsTrigger value="usuarios"><Users className="h-4 w-4 mr-1.5" />Usuários</TabsTrigger>)}
           <TabsTrigger value="notificacoes"><Bell className="h-4 w-4 mr-1.5" />Avisos</TabsTrigger>
           {podeVerAbasAdmin && (<TabsTrigger value="integracoes"><Plug className="h-4 w-4 mr-1.5" />Integrações</TabsTrigger>)}
           {podeVerAbasAdmin && (<TabsTrigger value="seguranca"><Shield className="h-4 w-4 mr-1.5" />Segurança</TabsTrigger>)}
-          <TabsTrigger value="aparencia"><Palette className="h-4 w-4 mr-1.5" />Aparência</TabsTrigger>
-        </TabsList>
+                  </TabsList>
         </div>
 
         {/* CLÍNICA */}
@@ -122,7 +193,7 @@ export default function PaginaConfiguracoes() {
               </div>
               <div className="space-y-1.5">
                 <Label>CNPJ</Label>
-                <Input value={clinica.cnpj} onChange={(e) => setClinica({ ...clinica, cnpj: e.target.value })} />
+                <Input value={clinica.cnpj} onChange={(e) => setClinica({ ...clinica, cnpj: mascararCnpj(e.target.value) })} />
               </div>
               <div className="space-y-1.5">
                 <Label>Responsável técnico</Label>
@@ -138,11 +209,11 @@ export default function PaginaConfiguracoes() {
               </div>
               <div className="space-y-1.5">
                 <Label>Telefone</Label>
-                <Input value={clinica.telefone} onChange={(e) => setClinica({ ...clinica, telefone: e.target.value })} />
+                <Input value={clinica.telefone} onChange={(e) => setClinica({ ...clinica, telefone: mascararTelefone(e.target.value) })} />
               </div>
               <div className="space-y-1.5">
                 <Label>CEP</Label>
-                <Input value={clinica.cep} onChange={(e) => setClinica({ ...clinica, cep: e.target.value })} />
+                <Input value={clinica.cep} onChange={(e) => setClinica({ ...clinica, cep: mascararCep(e.target.value) })} />
               </div>
               <div className="space-y-1.5 md:col-span-2">
                 <Label>Endereço completo</Label>
@@ -158,7 +229,7 @@ export default function PaginaConfiguracoes() {
               </div>
             </div>
             <div className="flex justify-end">
-              <Button onClick={() => salvar("Dados da clínica")}><Save className="h-4 w-4 mr-2" />Salvar alterações</Button>
+              <Button onClick={salvarClinica}><Save className="h-4 w-4 mr-2" />Salvar alterações</Button>
             </div>
           </Card>
         </TabsContent>
@@ -201,12 +272,11 @@ export default function PaginaConfiguracoes() {
               </div>
               <div className="space-y-1.5">
                 <Label>Telefone</Label>
-                <Input value={perfil.telefone} onChange={(e) => setPerfil({ ...perfil, telefone: e.target.value })} />
+                <Input value={perfil.telefone} onChange={(e) => setPerfil({ ...perfil, telefone: mascararTelefone(e.target.value) })} />
               </div>
             </div>
-            <div className="flex justify-between items-center pt-2">
-              <Button variant="outline"><KeyRound className="h-4 w-4 mr-2" />Alterar senha</Button>
-              <Button onClick={() => salvar("Perfil")}><Save className="h-4 w-4 mr-2" />Salvar perfil</Button>
+            <div className="flex justify-end items-center pt-2">
+              <Button onClick={salvarPerfil}><Save className="h-4 w-4 mr-2" />Salvar perfil</Button>
             </div>
           </Card>
         </TabsContent>
@@ -229,8 +299,7 @@ export default function PaginaConfiguracoes() {
             {[
               { chave: "emailSessoes" as const, titulo: "Resumo de sessões por e-mail", desc: "Receba ao final do dia um e-mail com as sessões realizadas.", icone: Mail },
               { chave: "emailRelatorios" as const, titulo: "Novos relatórios gerados", desc: "Notificar quando relatórios clínicos forem emitidos.", icone: FileSignature },
-              { chave: "emailFinanceiro" as const, titulo: "Alertas financeiros", desc: "Cobranças, pagamentos e inadimplência.", icone: Mail },
-              { chave: "pushAgendamentos" as const, titulo: "Push de agendamentos", desc: "Avisos no navegador sobre novos agendamentos e mudanças.", icone: CalendarIcon },
+                            { chave: "pushAgendamentos" as const, titulo: "Push de agendamentos", desc: "Avisos no navegador sobre novos agendamentos e mudanças.", icone: CalendarIcon },
               { chave: "whatsappLembretes" as const, titulo: "Lembretes via WhatsApp", desc: "Enviar lembretes automáticos aos responsáveis 24h antes da sessão.", icone: MessageSquare },
               { chave: "resumoSemanal" as const, titulo: "Resumo semanal", desc: "Receba todas as segundas um panorama da semana anterior.", icone: Mail },
             ].map(({ chave, titulo, desc, icone: Icone }) => (
@@ -334,76 +403,6 @@ export default function PaginaConfiguracoes() {
         </TabsContent>
         )}
 
-        {/* APARÊNCIA */}
-        <TabsContent value="aparencia" className="pt-4">
-          <Card className="p-6 space-y-5">
-            <div>
-              <h2 className="font-heading font-semibold text-foreground">Aparência e localização</h2>
-              <p className="text-sm text-muted-foreground">Personalize a interface conforme sua preferência de uso.</p>
-            </div>
-            <Separator />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Tema</Label>
-                <Select value={aparencia.tema} onValueChange={(v) => setAparencia({ ...aparencia, tema: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="claro">Claro</SelectItem>
-                    <SelectItem value="escuro">Escuro</SelectItem>
-                    <SelectItem value="sistema">Seguir sistema</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Densidade da interface</Label>
-                <Select value={aparencia.densidade} onValueChange={(v) => setAparencia({ ...aparencia, densidade: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="compacta">Compacta</SelectItem>
-                    <SelectItem value="confortavel">Confortável</SelectItem>
-                    <SelectItem value="espacosa">Espaçosa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Idioma</Label>
-                <Select value={aparencia.idioma} onValueChange={(v) => setAparencia({ ...aparencia, idioma: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                    <SelectItem value="en-US">English (US)</SelectItem>
-                    <SelectItem value="es-ES">Español</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fuso horário</Label>
-                <Select value={aparencia.fusoHorario} onValueChange={(v) => setAparencia({ ...aparencia, fusoHorario: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="America/Sao_Paulo">Brasília (GMT-3)</SelectItem>
-                    <SelectItem value="America/Manaus">Manaus (GMT-4)</SelectItem>
-                    <SelectItem value="America/Rio_Branco">Rio Branco (GMT-5)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Formato de data</Label>
-                <Select value={aparencia.formatoData} onValueChange={(v) => setAparencia({ ...aparencia, formatoData: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dd/MM/yyyy">31/12/2025</SelectItem>
-                    <SelectItem value="yyyy-MM-dd">2025-12-31</SelectItem>
-                    <SelectItem value="MM/dd/yyyy">12/31/2025</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={() => salvar("Aparência")}><Save className="h-4 w-4 mr-2" />Salvar preferências</Button>
-            </div>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
