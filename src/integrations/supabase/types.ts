@@ -474,55 +474,55 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string
+          carga_horaria_semanal: number | null
           cargo: string
           criado_em: string
           data_admissao: string | null
           email: string
           especialidade: string | null
           id: string
-          nome_completo: string
           nivel_acesso: string | null
+          nome_completo: string
           observacoes: string | null
           registro_conselho: string | null
           sub_cargo: string | null
           telefone: string | null
-          carga_horaria_semanal: number | null
           user_id: string | null
         }
         Insert: {
           ativo?: boolean
           atualizado_em?: string
+          carga_horaria_semanal?: number | null
           cargo?: string
           criado_em?: string
           data_admissao?: string | null
           email: string
           especialidade?: string | null
           id?: string
-          nome_completo: string
           nivel_acesso?: string | null
+          nome_completo: string
           observacoes?: string | null
           registro_conselho?: string | null
           sub_cargo?: string | null
           telefone?: string | null
-          carga_horaria_semanal?: number | null
           user_id?: string | null
         }
         Update: {
           ativo?: boolean
           atualizado_em?: string
+          carga_horaria_semanal?: number | null
           cargo?: string
           criado_em?: string
           data_admissao?: string | null
           email?: string
           especialidade?: string | null
           id?: string
-          nome_completo?: string
           nivel_acesso?: string | null
+          nome_completo?: string
           observacoes?: string | null
           registro_conselho?: string | null
           sub_cargo?: string | null
           telefone?: string | null
-          carga_horaria_semanal?: number | null
           user_id?: string | null
         }
         Relationships: []
