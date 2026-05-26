@@ -153,6 +153,9 @@ export default function PastaCrianca() {
   const { id } = useParams();
   const navegar = useNavigate();
   const { crianca, carregando, enviarFoto, enviandoFoto, atualizar, salvando } = useCrianca(id);
+  const { papel } = useUserRole();
+  const ehPsicologo = papel === "psicologo";
+  const abasVisiveis = abas.filter((a) => !(ehPsicologo && a.id === "familiar"));
   const [abaAtiva, setAbaAtiva] = useState("cadastro");
   const { papel } = useUserRole();
   const abasVisiveis = abas.filter((aba) => !(papel === "psicologo" && aba.id === "familiar"));
@@ -224,6 +227,7 @@ export default function PastaCrianca() {
       case "sessoes":
         return <SessoesCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "familiar":
+        if (ehPsicologo) return <PlaceholderAba titulo="Indisponível" />;
         return <SecaoFamiliarCrianca criancaId={crianca.id} criancaNome={crianca.nome} />;
       case "medico":
         return (

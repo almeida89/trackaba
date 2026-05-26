@@ -68,28 +68,52 @@ export function useFamiliaresCrianca(criancaId: string | undefined) {
   const criar = useMutation({
     mutationFn: async (input: NovoFamiliarInput) => {
       if (!criancaId) throw new Error("criancaId ausente");
-      // Cria usuário com papel "familia" via edge function
-      const { data: resp, error: edgeErr } = await supabase.functions.invoke("admin-users", {
-        body: {
-          acao: "criar",
-          email: input.email,
-          senha: input.senha,
-          nome_completo: input.nome,
-          telefone: input.telefone || null,
-          papel: "familia",
-        },
-      });
-      const erroEdge = (resp as { erro?: string })?.erro || edgeErr?.message;
+      // 1) cria usuário (papel família) via edge function
+      let resp: { user_id?: string; erro?: string } | null = null;
+      let edgeErr: Error | null = null;
+      try {
+        const { data, error } = await supabase.functions.invoke("admin-users", {
+          body: {
+            acao: "criar",
+            email: input.email,
+            senha: input.senha,
+            nome_completo: input.nome,
+            telefone: input.telefone || null,
+            papel: "familia",
+          },
+        });
+        resp = data as { user_id?: string; erro?: string };
+        if (error) edgeErr = error as Error;
+      } catch (e) {
+        edgeErr = e as Error;
+      }
+      const erroEdge = resp?.erro || edgeErr?.message;
       if (erroEdge) throw new Error(erroEdge);
-      const novoUserId = (resp as { user_id?: string })?.user_id;
+      const novoUserId = resp?.user_id;
       if (!novoUserId) throw new Error("Falha ao criar acesso do familiar.");
 
-      // Garante perfil (insere se trigger não tiver criado)
-      await supabase.from("profiles").upsert(
+      // Rollback helper: se algo abaixo falhar, remove o usuário órfão
+      const rollback = async () => {
+        try {
+          await supabase.functions.invoke("admin-users", {
+            body: { acao: "remover", user_id: novoUserId },
+          });
+        } catch {
+          /* best-effort */
+        }
+      };
+
+      // 2) garante profile
+      const { error: perfErr } = await supabase.from("profiles").upsert(
         { id: novoUserId, nome_completo: input.nome, telefone: input.telefone || null },
         { onConflict: "id" },
       );
+      if (perfErr) {
+        await rollback();
+        throw perfErr;
+      }
 
+      // 3) vincula em familia_membros
       const { error: vincErr } = await supabase.from("familia_membros").insert({
         crianca_id: criancaId,
         user_id: novoUserId,
@@ -97,7 +121,10 @@ export function useFamiliaresCrianca(criancaId: string | undefined) {
         pode_ver_evolucao: input.podeVerEvolucao,
         pode_ver_sessoes: input.podeVerSessoes,
       });
-      if (vincErr) throw vincErr;
+      if (vincErr) {
+        await rollback();
+        throw vincErr;
+      }
     },
     onSuccess: () => {
       toast.success("Familiar cadastrado com acesso ao portal");

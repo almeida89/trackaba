@@ -28,6 +28,8 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import type { AppRole } from "@/hooks/useUserRole";
+
 interface ItemMenu {
   titulo: string;
   url: string;
@@ -41,11 +43,17 @@ interface SecaoMenu {
   itens: ItemMenu[];
 }
 
+const CLINICO: AppRole[] = ["admin", "psicologo", "coordenador", "recepcionista"];
+const RELACIONAMENTO: AppRole[] = ["admin", "coordenador", "recepcionista"];
+const SOMENTE_ADMIN: AppRole[] = ["admin"];
+const ADMIN_RECEP: AppRole[] = ["admin", "recepcionista"];
+const ADMIN_COORD_RECEP: AppRole[] = ["admin", "coordenador", "recepcionista"];
+
 const secoesMenu: SecaoMenu[] = [
   {
     titulo: "Geral",
     itens: [
-      { titulo: "Dashboard", url: "/", icone: LayoutDashboard },
+      { titulo: "Dashboard", url: "/", icone: LayoutDashboard, papeis: CLINICO },
     ],
   },
   {
@@ -61,18 +69,18 @@ const secoesMenu: SecaoMenu[] = [
   {
     titulo: "Relacionamento",
     itens: [
-      { titulo: "Família", url: "/familia", icone: Heart },
-      { titulo: "Escola", url: "/escola", icone: GraduationCap },
+      { titulo: "Família", url: "/familia", icone: Heart, papeis: RELACIONAMENTO },
+      { titulo: "Escola", url: "/escola", icone: GraduationCap, papeis: RELACIONAMENTO },
     ],
   },
   {
     titulo: "Administração",
     itens: [
-      { titulo: "Funcionários", url: "/funcionarios", icone: Users, somenteAdmin: true },
-      { titulo: "Usuários", url: "/usuarios", icone: UserCog, somenteAdmin: true },
-      { titulo: "Automações", url: "/automacoes", icone: Zap, somenteAdmin: true },
-      { titulo: "Configurações", url: "/configuracoes", icone: Settings, somenteAdmin: true },
-      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield, somenteAdmin: true },
+      { titulo: "Funcionários", url: "/funcionarios", icone: Users, papeis: ADMIN_COORD_RECEP },
+      { titulo: "Usuários", url: "/usuarios", icone: UserCog, papeis: ADMIN_RECEP },
+      { titulo: "Automações", url: "/automacoes", icone: Zap, papeis: SOMENTE_ADMIN },
+      { titulo: "Configurações", url: "/configuracoes", icone: Settings, papeis: SOMENTE_ADMIN },
+      { titulo: "Logs / Auditoria", url: "/logs", icone: Shield, papeis: SOMENTE_ADMIN },
     ],
   },
 ];
